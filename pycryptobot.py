@@ -935,7 +935,7 @@ def executeJob(sc, app=PyCryptoBot(), state=AppState(), trading_data=pd.DataFram
 
 
         else:
-            print(now, '|', app.getMarket() + bullbeartext, '|', app.printGranularity(), '| Current Price:', price)
+            print(now, '|', app.getMarket() + bullbeartext, '|', app.printGranularity(), '| Current Price:', price, '| Margin ', margin)
 
             # decrement ignored iteration
             state.iterations = state.iterations - 1

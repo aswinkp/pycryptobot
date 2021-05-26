@@ -70,7 +70,7 @@ def parse_arguments():
     parser.add_argument('--disabletelegram', action="store_true", help="disable telegram messages")
     parser.add_argument('--disablelog', action="store_true", help="disable pycryptobot.log")
     parser.add_argument('--disabletracker', action="store_true", help="disable tracker.csv")
-
+    parser.add_argument('-f', type=str)
     # parse arguments
     # args = parser.parse_args()
     return vars(parser.parse_args())
