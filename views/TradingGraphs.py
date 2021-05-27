@@ -235,8 +235,8 @@ class TradingGraphs():
         indices = np.arange(len(df_subset)) 
 
         ax1.plot(indices, df_subset['close'], label='price', color='royalblue')
-        ax1.plot(indices, df_subset['ema12'], label='ema12', color='orange')
-        ax1.plot(indices, df_subset['ema26'], label='ema26', color='purple')
+        ax1.plot(indices, df_subset['ema5'], label='ema5', color='orange')
+        ax1.plot(indices, df_subset['ema12'], label='ema12', color='purple')
         ax1.xaxis.set_major_formatter(ticker.FuncFormatter(format_date))
         ax1.set_title('Price, EMA12 and EMA26')
         ax1.set_ylabel('Price')
@@ -415,8 +415,8 @@ class TradingGraphs():
         ax1 = plt.subplot(111)
         ax1.set_title('Astral Candlestick Pattern')
         plt.plot(df_subset['close'], label='price', color='black')
-        plt.plot(df_subset['ema12'], label='ema12', color='orange')
-        plt.plot(df_subset['ema26'], label='ema26', color='purple')
+        plt.plot(df_subset['ema5'], label='ema5', color='orange')
+        plt.plot(df_subset['ema12'], label='ema12', color='purple')
         plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
 
         df_candlestick = self.df[self.df['astral_buy'] is True]
@@ -465,8 +465,8 @@ class TradingGraphs():
         ax1 = plt.subplot(111)
         ax1.set_title('Candlestick Patterns')
         plt.plot(df_subset['close'], label='price', color='black')
-        plt.plot(df_subset['ema12'], label='ema12', color='orange')
-        plt.plot(df_subset['ema26'], label='ema26', color='purple')
+        plt.plot(df_subset['ema5'], label='ema5', color='orange')
+        plt.plot(df_subset['ema12'], label='ema12', color='purple')
         plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
 
         df_candlestick = self.df[self.df['three_white_soldiers'] is True]

@@ -50,7 +50,7 @@ class TechnicalAnalysis():
         self.addSMA(50)
         self.addSMA(200)
         self.addEMA(12)
-        self.addEMA(26)
+        self.addEMA(5)
         self.addGoldenCross()
         self.addDeathCross()
         self.addFibonacciBollingerBands()
@@ -404,14 +404,14 @@ class TechnicalAnalysis():
         if len(self.df) < 26:
             raise Exception('Data range too small.')
 
-        if not self.df['ema12'].dtype == 'float64' and not self.df['ema12'].dtype == 'int64':
+        if not self.df['ema5'].dtype == 'float64' and not self.df['ema5'].dtype == 'int64':
             raise AttributeError("Pandas DataFrame 'ema12' column not int64 or float64.")
 
-        if not self.df['ema26'].dtype == 'float64' and not self.df['ema26'].dtype == 'int64':
+        if not self.df['ema12'].dtype == 'float64' and not self.df['ema12'].dtype == 'int64':
             raise AttributeError("Pandas DataFrame 'ema26' column not int64 or float64.")
 
         df = DataFrame()
-        df['macd'] = self.df['ema12'] - self.df['ema26']
+        df['macd'] = self.df['ema5'] - self.df['ema12']
         df['signal'] = df['macd'].ewm(span=9, adjust=False).mean()        
         return df
 
@@ -651,18 +651,18 @@ class TechnicalAnalysis():
             raise AttributeError(
                 "Pandas DataFrame 'close' column not int64 or float64.")
 
-        if not 'ema12' or not 'ema26' in self.df.columns:
+        if not 'ema5' or not 'ema12' in self.df.columns:
             self.addEMA(12)
-            self.addEMA(26)
+            self.addEMA(5)
 
         # true if EMA12 is above the EMA26
-        self.df['ema12gtema26'] = self.df.ema12 > self.df.ema26
+        self.df['ema12gtema26'] = self.df.ema5 > self.df.ema12
         # true if the current frame is where EMA12 crosses over above
         self.df['ema12gtema26co'] = self.df.ema12gtema26.ne(self.df.ema12gtema26.shift())
         self.df.loc[self.df['ema12gtema26'] == False, 'ema12gtema26co'] = False
 
         # true if the EMA12 is below the EMA26
-        self.df['ema12ltema26'] = self.df.ema12 < self.df.ema26
+        self.df['ema12ltema26'] = self.df.ema5 < self.df.ema12
         # true if the current frame is where EMA12 crosses over below
         self.df['ema12ltema26co'] = self.df.ema12ltema26.ne(self.df.ema12ltema26.shift())
         self.df.loc[self.df['ema12ltema26'] == False, 'ema12ltema26co'] = False

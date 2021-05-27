@@ -352,7 +352,7 @@ def executeJob(sc, app=PyCryptoBot(), state=AppState(), trading_data=pd.DataFram
                 logging.warning(log_text)
 
                 app.notifyTelegram(app.getMarket() + ' (' + app.printGranularity() + ') ' + log_text)
-
+            print("checking trailingstoploss", (margin > 0 and app.trailingStopLoss() != None and change_pcnt_high < app.trailingStopLoss()))
             # loss failsafe sell at trailing_stop_loss
             if margin > 0 and app.trailingStopLoss() != None and change_pcnt_high < app.trailingStopLoss():
                 state.action = 'SELL'
@@ -438,7 +438,7 @@ def executeJob(sc, app=PyCryptoBot(), state=AppState(), trading_data=pd.DataFram
             truncate = functools.partial(_truncate, n=precision)
 
             price_text = 'Close: ' + truncate(price)
-            ema_text = app.compare(df_last['ema12'].values[0], df_last['ema26'].values[0], 'EMA12/26', precision)
+            ema_text = app.compare(df_last['ema5'].values[0], df_last['ema12'].values[0], 'EMA12/26', precision)
 
             macd_text = ''
             if app.disableBuyMACD() is False:
@@ -623,8 +623,8 @@ def executeJob(sc, app=PyCryptoBot(), state=AppState(), trading_data=pd.DataFram
                     logging.info('-- Margin: ' + margin_text + ' --')
 
                 logging.info('price: ' + truncate(price))
-                logging.info('ema12: ' + truncate(float(df_last['ema12'].values[0])))
-                logging.info('ema26: ' + truncate(float(df_last['ema26'].values[0])))
+                logging.info('ema12: ' + truncate(float(df_last['ema5'].values[0])))
+                logging.info('ema26: ' + truncate(float(df_last['ema12'].values[0])))
                 logging.info('ema12gtema26co: ' + str(ema12gtema26co))
                 logging.info('ema12gtema26: ' + str(ema12gtema26))
                 logging.info('ema12ltema26co: ' + str(ema12ltema26co))
@@ -649,9 +649,9 @@ def executeJob(sc, app=PyCryptoBot(), state=AppState(), trading_data=pd.DataFram
                 print('--------------------------------------------------------------------------------')
                 txt = '            Close : ' + truncate(price)
                 print('|', txt, (' ' * (75 - len(txt))), '|')
-                txt = '            EMA12 : ' + truncate(float(df_last['ema12'].values[0]))
+                txt = '            EMA12 : ' + truncate(float(df_last['ema5'].values[0]))
                 print('|', txt, (' ' * (75 - len(txt))), '|')
-                txt = '            EMA26 : ' + truncate(float(df_last['ema26'].values[0]))
+                txt = '            EMA26 : ' + truncate(float(df_last['ema12'].values[0]))
                 print('|', txt, (' ' * (75 - len(txt))), '|')
                 txt = '   Crossing Above : ' + str(ema12gtema26co)
                 print('|', txt, (' ' * (75 - len(txt))), '|')
@@ -935,7 +935,7 @@ def executeJob(sc, app=PyCryptoBot(), state=AppState(), trading_data=pd.DataFram
 
 
         else:
-            print(now, '|', app.getMarket() + bullbeartext, '|', app.printGranularity(), '| Current Price:', price, '| Margin ', margin)
+            print(now, '|', app.getMarket() + bullbeartext, '|', app.printGranularity(), '| Current Price:', price)
 
             # decrement ignored iteration
             state.iterations = state.iterations - 1

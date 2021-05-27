@@ -343,7 +343,7 @@ class PyCryptoBot():
             ta.addEMA(12)
             ta.addEMA(26)
             df_last = ta.getDataFrame().copy().iloc[-1,:]
-            df_last['bull'] = df_last['ema12'] > df_last['ema26']
+            df_last['bull'] = df_last['ema5'] > df_last['ema12']
             return bool(df_last['bull'])
         except Exception:
             return False
@@ -407,7 +407,7 @@ class PyCryptoBot():
             ta.addEMA(12)
             ta.addEMA(26)
             df_last = ta.getDataFrame().copy().iloc[-1, :]
-            df_last['bull'] = df_last['ema12'] > df_last['ema26']
+            df_last['bull'] = df_last['ema5'] > df_last['ema12']
             return bool(df_last['bull'])
         except Exception:
             return False
