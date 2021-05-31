@@ -52,6 +52,8 @@ class TechnicalAnalysis():
         self.addEMA(8)
         self.addEMA(12)
         self.addEMA(26)
+        self.addEMA(3)
+        self.addEMA(6)
         self.addGoldenCross()
         self.addDeathCross()
         self.addFibonacciBollingerBands()
@@ -320,7 +322,7 @@ class TechnicalAnalysis():
         if not isinstance(period, int):
             raise TypeError('Period parameter is not perioderic.')
 
-        if period < 5 or period > 200:
+        if period < 2 or period > 200:
             raise ValueError('Period is out of range')
 
         if len(self.df) < period:
@@ -334,7 +336,7 @@ class TechnicalAnalysis():
         if not isinstance(period, int):
             raise TypeError('Period parameter is not perioderic.')
 
-        if period < 5 or period > 200:
+        if period < 2 or period > 200:
             raise ValueError('Period is out of range')
 
         if len(self.df) < period:
@@ -405,15 +407,15 @@ class TechnicalAnalysis():
         if len(self.df) < 26:
             raise Exception('Data range too small.')
 
-        if not self.df['ema12'].dtype == 'float64' and not self.df['ema12'].dtype == 'int64':
-            raise AttributeError("Pandas DataFrame 'ema12' column not int64 or float64.")
+        if not self.df['ema3'].dtype == 'float64' and not self.df['ema3'].dtype == 'int64':
+            raise AttributeError("Pandas DataFrame 'ema3' column not int64 or float64.")
 
-        if not self.df['ema26'].dtype == 'float64' and not self.df['ema26'].dtype == 'int64':
-            raise AttributeError("Pandas DataFrame 'ema26' column not int64 or float64.")
+        if not self.df['ema6'].dtype == 'float64' and not self.df['ema6'].dtype == 'int64':
+            raise AttributeError("Pandas DataFrame 'ema6' column not int64 or float64.")
 
         df = DataFrame()
-        df['macd'] = self.df['ema12'] - self.df['ema26']
-        df['signal'] = df['macd'].ewm(span=9, adjust=False).mean()        
+        df['macd'] = self.df['ema3'] - self.df['ema6']
+        df['signal'] = df['macd'].ewm(span=9, adjust=False).mean()
         return df
 
     def addMACD(self) -> None:
@@ -640,7 +642,7 @@ class TechnicalAnalysis():
         return ''
 
     def addEMABuySignals(self) -> None:
-        """Adds the EMA12/EMA26 buy and sell signals to the DataFrame"""
+        """Adds the ema3/ema6 buy and sell signals to the DataFrame"""
 
         if not isinstance(self.df, DataFrame):
             raise TypeError('Pandas DataFrame required.')
@@ -655,35 +657,35 @@ class TechnicalAnalysis():
         if not 'ema8' in self.df.columns:
             self.addEMA(8)
 
-        if not 'ema12' in self.df.columns:
+        if not 'ema3' in self.df.columns:
             self.addEMA(12)
         
-        if not 'ema26' in self.df.columns:
+        if not 'ema6' in self.df.columns:
             self.addEMA(26)
 
-        # true if EMA8 is above the EMA12
-        self.df['ema8gtema12'] = self.df.ema8 > self.df.ema12
+        # true if EMA8 is above the ema3
+        self.df['ema8gtema3'] = self.df.ema8 > self.df.ema3
         # true if the current frame is where EMA8 crosses over above
-        self.df['ema8gtema12co'] = self.df.ema8gtema12.ne(self.df.ema8gtema12.shift())
-        self.df.loc[self.df['ema8gtema12'] == False, 'ema8gtema12co'] = False
+        self.df['ema8gtema3co'] = self.df.ema8gtema3.ne(self.df.ema8gtema3.shift())
+        self.df.loc[self.df['ema8gtema3'] == False, 'ema8gtema3co'] = False
 
-        # true if the EMA8 is below the EMA12
-        self.df['ema8ltema12'] = self.df.ema8 < self.df.ema12
+        # true if the EMA8 is below the ema3
+        self.df['ema8ltema3'] = self.df.ema8 < self.df.ema3
         # true if the current frame is where EMA8 crosses over below
-        self.df['ema8ltema12co'] = self.df.ema8ltema12.ne(self.df.ema8ltema12.shift())
-        self.df.loc[self.df['ema8ltema12'] == False, 'ema8ltema12co'] = False
+        self.df['ema8ltema3co'] = self.df.ema8ltema3.ne(self.df.ema8ltema3.shift())
+        self.df.loc[self.df['ema8ltema3'] == False, 'ema8ltema3co'] = False
 
-        # true if EMA12 is above the EMA26
-        self.df['ema12gtema26'] = self.df.ema12 > self.df.ema26
-        # true if the current frame is where EMA12 crosses over above
-        self.df['ema12gtema26co'] = self.df.ema12gtema26.ne(self.df.ema12gtema26.shift())
-        self.df.loc[self.df['ema12gtema26'] == False, 'ema12gtema26co'] = False
+        # true if ema3 is above the ema6
+        self.df['ema3gtema6'] = self.df.ema3 > self.df.ema6
+        # true if the current frame is where ema3 crosses over above
+        self.df['ema3gtema6co'] = self.df.ema3gtema6.ne(self.df.ema3gtema6.shift())
+        self.df.loc[self.df['ema3gtema6'] == False, 'ema3gtema6co'] = False
 
-        # true if the EMA12 is below the EMA26
-        self.df['ema12ltema26'] = self.df.ema12 < self.df.ema26
-        # true if the current frame is where EMA12 crosses over below
-        self.df['ema12ltema26co'] = self.df.ema12ltema26.ne(self.df.ema12ltema26.shift())
-        self.df.loc[self.df['ema12ltema26'] == False, 'ema12ltema26co'] = False
+        # true if the ema3 is below the ema6
+        self.df['ema3ltema6'] = self.df.ema3 < self.df.ema6
+        # true if the current frame is where ema3 crosses over below
+        self.df['ema3ltema6co'] = self.df.ema3ltema6.ne(self.df.ema3ltema6.shift())
+        self.df.loc[self.df['ema3ltema6'] == False, 'ema3ltema6co'] = False
 
     def addSMABuySignals(self) -> None:
         """Adds the SMA50/SMA200 buy and sell signals to the DataFrame"""

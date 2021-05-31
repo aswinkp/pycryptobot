@@ -39,8 +39,8 @@ class TradingGraphs():
         # set graph format
         plt.style.use('seaborn')
 
-    def renderBuySellSignalEMA1226(self, saveFile='', saveOnly=False):
-        """Render the EMA12 and EMA26 buy and sell signals
+    def renderBuySellSignalema326(self, saveFile='', saveOnly=False):
+        """Render the ema3 and ema6 buy and sell signals
         
         Parameters
         ----------
@@ -50,13 +50,13 @@ class TradingGraphs():
             Save the figure without displaying it 
         """
 
-        buysignals = self.df[self.df.ema12gtema26co is True]
-        sellsignals = self.df[self.df.ema12ltema26co is True]
+        buysignals = self.df[self.df.ema3gtema6co is True]
+        sellsignals = self.df[self.df.ema3ltema6co is True]
 
         plt.subplot(111)
         plt.plot(self.df.close, label="price", color="royalblue")
-        plt.plot(self.df.ema12, label="ema12", color="orange")
-        plt.plot(self.df.ema26, label="ema26", color="purple")
+        plt.plot(self.df.ema3, label="ema3", color="orange")
+        plt.plot(self.df.ema6, label="ema6", color="purple")
         plt.ylabel('Price')
 
         for idx in buysignals.index.tolist():
@@ -78,8 +78,8 @@ class TradingGraphs():
         if saveOnly is False:
             plt.show()
 
-    def renderBuySellSignalEMA1226MACD(self, saveFile='', saveOnly=False):
-        """Render the EMA12, EMA26 and MACD buy and sell signals
+    def renderBuySellSignalema326MACD(self, saveFile='', saveOnly=False):
+        """Render the ema3, ema6 and MACD buy and sell signals
         
         Parameters
         ----------
@@ -89,23 +89,23 @@ class TradingGraphs():
             Save the figure without displaying it         
         """
 
-        buysignals = ((self.df.ema12gtema26co is True) & (self.df.macdgtsignal is True) & (self.df.goldencross is True)) 
-        sellsignals = ((self.df.ema12ltema26co is True) & (self.df.macdltsignal is True))
+        buysignals = ((self.df.ema3gtema6co is True) & (self.df.macdgtsignal is True) & (self.df.goldencross is True))
+        sellsignals = ((self.df.ema3ltema6co is True) & (self.df.macdltsignal is True))
         df_signals = self.df[(buysignals) | (sellsignals)]
 
         ax1 = plt.subplot(211)
         plt.plot(self.df.close, label="price", color="royalblue")
-        plt.plot(self.df.ema12, label="ema12", color="orange")
-        plt.plot(self.df.ema26, label="ema26", color="purple")
+        plt.plot(self.df.ema3, label="ema3", color="orange")
+        plt.plot(self.df.ema6, label="ema6", color="purple")
         plt.ylabel('Price')
 
         action = ''
         last_action = ''
         for idx, row in df_signals.iterrows():
-            if row['ema12gtema26co'] is True and row['macdgtsignal'] is True and last_action != 'buy':
+            if row['ema3gtema6co'] is True and row['macdgtsignal'] is True and last_action != 'buy':
                 action = 'buy'
                 plt.axvline(x=idx, color='green')
-            elif row['ema12ltema26'] is True and row['macdltsignal'] is True and action == 'buy':
+            elif row['ema3ltema6'] is True and row['macdltsignal'] is True and action == 'buy':
                 action = 'sell'
                 plt.axvline(x=idx, color='red')
 
@@ -173,8 +173,8 @@ class TradingGraphs():
         if saveOnly is False:
             plt.show()
 
-    def renderPriceEMA12EMA26(self, saveFile='', saveOnly=False):
-        """Render the price, EMA12 and EMA26
+    def renderPriceema3ema6(self, saveFile='', saveOnly=False):
+        """Render the price, ema3 and ema6
         
         Parameters
         ----------
@@ -186,8 +186,8 @@ class TradingGraphs():
 
         plt.subplot(111)
         plt.plot(self.df.close, label="price")
-        plt.plot(self.df.ema12, label="ema12")
-        plt.plot(self.df.ema26, label="ema26")
+        plt.plot(self.df.ema3, label="ema3")
+        plt.plot(self.df.ema6, label="ema6")
         plt.legend()
         plt.ylabel('Price')
         plt.xticks(rotation=90)
@@ -203,7 +203,7 @@ class TradingGraphs():
             plt.show()
 
     def renderEMAandMACD(self, period=30, saveFile='', saveOnly=False):
-        """Render the price, EMA12, EMA26 and MACD
+        """Render the price, ema3, ema6 and MACD
         
         Parameters
         ----------
@@ -238,10 +238,10 @@ class TradingGraphs():
         indices = np.arange(len(df_subset)) 
 
         ax1.plot(indices, df_subset['close'], label='price', color='royalblue')
-        ax1.plot(indices, df_subset['ema12'], label='ema12', color='orange')
-        ax1.plot(indices, df_subset['ema26'], label='ema26', color='purple')
+        ax1.plot(indices, df_subset['ema3'], label='ema3', color='orange')
+        ax1.plot(indices, df_subset['ema6'], label='ema6', color='purple')
         ax1.xaxis.set_major_formatter(ticker.FuncFormatter(format_date))
-        ax1.set_title('Price, EMA12 and EMA26')
+        ax1.set_title('Price, ema3 and ema6')
         ax1.set_ylabel('Price')
         ax1.legend()
         fig.autofmt_xdate()
@@ -418,8 +418,8 @@ class TradingGraphs():
         ax1 = plt.subplot(111)
         ax1.set_title('Astral Candlestick Pattern')
         plt.plot(df_subset['close'], label='price', color='black')
-        plt.plot(df_subset['ema12'], label='ema12', color='orange')
-        plt.plot(df_subset['ema26'], label='ema26', color='purple')
+        plt.plot(df_subset['ema3'], label='ema3', color='orange')
+        plt.plot(df_subset['ema6'], label='ema6', color='purple')
         plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
 
         df_candlestick = self.df[self.df['astral_buy'] is True]
@@ -468,8 +468,8 @@ class TradingGraphs():
         ax1 = plt.subplot(111)
         ax1.set_title('Candlestick Patterns')
         plt.plot(df_subset['close'], label='price', color='black')
-        plt.plot(df_subset['ema12'], label='ema12', color='orange')
-        plt.plot(df_subset['ema26'], label='ema26', color='purple')
+        plt.plot(df_subset['ema3'], label='ema3', color='orange')
+        plt.plot(df_subset['ema6'], label='ema6', color='purple')
         plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
 
         df_candlestick = self.df[self.df['three_white_soldiers'] is True]
