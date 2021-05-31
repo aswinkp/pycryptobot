@@ -993,11 +993,11 @@ def detect_buyable_coins(quote_currency = "BNB"):
             state.action = getAction(now, app, price, df, df_last, state.last_action)
 
             buy_score = 0
-            if ema12gtema26: buy_score += 2
+            if ema12gtema26: buy_score += 3
             if ema12gtema26co: buy_score += 2
-            if macdgtsignal: buy_score += 2
-            if goldencross: buy_score += 2
-            if macdgtsignalco: buy_score += 2
+            if macdgtsignal: buy_score += 3
+            if goldencross: buy_score += 3
+            if macdgtsignalco: buy_score +=2
             if macdgtsignal: buy_score += 2
             if obv_pc > -5: buy_score += 4
             if elder_ray_buy: buy_score += 2
