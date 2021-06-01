@@ -12,6 +12,7 @@ from models.AppState import AppState
 from models.Trading import TechnicalAnalysis
 from models.TradingAccount import TradingAccount
 from models.helper.MarginHelper import calculate_margin
+from models.helper.csv_writer import write_dict_to_csv
 from views.TradingGraphs import TradingGraphs
 from models.helper.LogHelper import Logger
 
@@ -424,6 +425,13 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 if not (not app.allowSellAtLoss() and margin <= 0):
                     app.notifyTelegram(app.getMarket() + ' (' + app.printGranularity() + ') ' + log_text)
 
+            if (datetime.now()-state.last_buy_time).seconds > 3600 and margin <= 0.5:
+                state.action = "SELL"
+                state.last_action = 'BUY'
+                immediate_action = True
+                log_text = '! Waste of time. No significant price change in past hour'
+                Logger.warning(log_text)
+
         bullbeartext = ''
         if app.disableBullOnly() is True or (df_last['sma50'].values[0] == df_last['sma200'].values[0]):
             bullbeartext = ''
@@ -707,6 +715,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
             if state.action == 'BUY':
                 state.last_buy_price = price
                 state.last_buy_high = state.last_buy_price
+                state.last_buy_time=datetime.now()
 
                 # if live
                 if app.isLive():
@@ -734,6 +743,46 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                     # display balances
                     Logger.info(app.getBaseCurrency() + ' balance after order: ' + str(account.getBalance(app.getBaseCurrency())))
                     Logger.info(app.getQuoteCurrency() + ' balance after order: ' + str(account.getBalance(app.getQuoteCurrency())))
+                # if not live
+                else:
+                    app.notifyTelegram(app.getMarket() + ' (' + app.printGranularity() + ') TEST BUY at ' + price_text)
+                    # TODO: Improve simulator calculations by including calculations for buy and sell limit configurations.
+                    if state.last_buy_size == 0 and state.last_buy_filled == 0:
+                        state.last_buy_size = 1000
+                        state.first_buy_size = 1000
+
+                    state.buy_count = state.buy_count + 1
+                    state.buy_sum = state.buy_sum + state.last_buy_size
+
+                    if not app.isVerbose():
+                        Logger.info(formatted_current_df_index + ' | ' + app.getMarket() + ' | ' + app.printGranularity() + ' | ' + price_text + ' | BUY')
+
+                        bands = ta.getFibonacciRetracementLevels(float(price))
+                        Logger.info(' Fibonacci Retracement Levels:' + str(bands))
+                        ta.printSupportResistanceLevel(float(price))
+
+                        if len(bands) >= 1 and len(bands) <= 2:
+                            if len(bands) == 1:
+                                first_key = list(bands.keys())[0]
+                                if first_key == 'ratio1':
+                                    state.fib_low = 0
+                                    state.fib_high = bands[first_key]
+                                if first_key == 'ratio1_618':
+                                    state.fib_low = bands[first_key]
+                                    state.fib_high = bands[first_key] * 2
+                                else:
+                                    state.fib_low = bands[first_key]
+
+                            elif len(bands) == 2:
+                                first_key = list(bands.keys())[0]
+                                second_key = list(bands.keys())[1]
+                                state.fib_low = bands[first_key]
+                                state.fib_high = bands[second_key]
+
+                    else:
+                        Logger.info('--------------------------------------------------------------------------------')
+                        Logger.info('|                      *** Executing TEST Buy Order ***                        |')
+                        Logger.info('--------------------------------------------------------------------------------')
 
                 if app.shouldSaveGraphs():
                     tradinggraphs = TradingGraphs(ta)
@@ -791,6 +840,58 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                     Logger.info(app.getBaseCurrency() + ' balance after order: ' + str(account.getBalance(app.getBaseCurrency())))
                     Logger.info(app.getQuoteCurrency() + ' balance after order: ' + str(account.getBalance(app.getQuoteCurrency())))
 
+                # if not live
+                else:
+                    margin, profit, sell_fee = calculate_margin(
+                        buy_size=state.last_buy_size,
+                        buy_filled=state.last_buy_filled,
+                        buy_price=state.last_buy_price,
+                        buy_fee=state.last_buy_fee,
+                        sell_percent=app.getSellPercent(),
+                        sell_price=price,
+                        sell_taker_fee=app.getTakerFee())
+
+                    if state.last_buy_size > 0:
+                        margin_text = truncate(margin) + '%'
+                    else:
+                        margin_text = '0%'
+                    app.notifyTelegram(app.getMarket() + ' (' + app.printGranularity() + ') TEST SELL at ' +
+                                      price_text + ' (margin: ' + margin_text + ', (delta: ' +
+                                      str(round(price - state.last_buy_price, precision)) + ')')
+
+                    # Preserve next buy values for simulator
+                    state.sell_count = state.sell_count + 1
+                    buy_size = ((app.getSellPercent() / 100) * ((price / state.last_buy_price) * (state.last_buy_size - state.last_buy_fee)))
+                    state.last_buy_size = buy_size - sell_fee
+                    state.sell_sum = state.sell_sum + state.last_buy_size
+
+                    if not app.isVerbose():
+                        if price > 0:
+                            margin_text = truncate(margin) + '%'
+                        else:
+                            margin_text = '0%'
+
+                        Logger.info(formatted_current_df_index + ' | ' + app.getMarket() + ' | ' +
+                                     app.printGranularity() + ' | SELL | ' + str(price) + ' | BUY | ' +
+                                     str(state.last_buy_price) + ' | DIFF | ' + str(price - state.last_buy_price) +
+                                     ' | DIFF | ' + str(profit) + ' | MARGIN NO FEES | ' +
+                                     margin_text + ' | MARGIN FEES | ' + str(round(sell_fee, precision)))
+
+                    else:
+                        Logger.info('--------------------------------------------------------------------------------')
+                        Logger.info('|                      *** Executing TEST Sell Order ***                        |')
+                        Logger.info('--------------------------------------------------------------------------------')
+                write_dict_to_csv('sales_tracker.csv', {
+                    "market": app.getMarket(),
+                    "buy_time": state.last_buy_time,
+                    "buy_price": state.last_buy_price,
+                    "sell_time": datetime.now(),
+                    "sell_price": price,
+                    "last_buy_high": state.last_buy_high,
+                    "last_buy_high_margin": ((price / state.last_buy_high) - 1) * 100,
+                    "margin": margin,
+                    "time_difference": (datetime.now() - state.last_buy_time).seconds,
+                })
                 if app.shouldSaveGraphs():
                     tradinggraphs = TradingGraphs(ta)
                     ts = datetime.now().timestamp()
@@ -1002,28 +1103,31 @@ def detect_buyable_coins(quote_currency = "BNB"):
             if obv_pc > -5: buy_score += 4
             if elder_ray_buy: buy_score += 2
             if not elder_ray_sell: buy_score += 2
-            dataframe_dict[coin_pair] = [state.action, buy_score, datetime.now(), price, ema12gtema26, ema12gtema26co,
+
+            dataframe_dict[coin_pair] = [state.action, app.getGranularity(), buy_score, datetime.now(), price, ema3gtema6, ema3gtema6co,
                                          goldencross, macdgtsignal, macdgtsignalco, obv, obv_pc, elder_ray_buy,
                                          elder_ray_sell]
     dataframe = pd.DataFrame(dataframe_dict.values(), index=dataframe_dict.keys(),
-                             columns=['action', 'Buy score', 'Date time', 'Price', 'Fast EMA gt', 'EMA CO',
+                             columns=['action', 'Granularity', 'Buy score', 'Datetime', 'Price', 'Fast EMA gt', 'EMA CO',
                                       'Golden Cross', 'Macdgtsignal', 'Macdgtsignalco', 'Obv', 'Obv_pc',
                                       'Elder_ray_buy', 'elder_ray_sell'])
     dataframe = dataframe.sort_values(by='Buy score', ascending=False)
     buy_dataframe = dataframe[dataframe.action == 'BUY']
     print("buy_dataframe.index", buy_dataframe.index)
     if len(buy_dataframe.index) > 0:
+        buy_dataframe.to_csv('buy_dataframe_tracker.csv', mode='a', header=False)
         coin_pair = buy_dataframe.index[0]
         from models.config import binanceParseMarket
         app.market, app.base_currency, app.quote_currency = binanceParseMarket(coin_pair)
         print("Sending buy signal for", coin_pair)
         executeJob(s, app, state)
+        s.run()
     else:
         # wait for 10 min and execute again. if not get the index of biggest score
         print("None of the coin pairs get buy signals atm. Waiting for 15 minutes")
-        list(map(s.cancel, s.queue))
-        s.enter(900, 1, detect_buyable_coins, (quote_currency))
-    s.run()
+        from time import sleep
+        sleep(900)
+        detect_buyable_coins(quote_currency=quote_currency)
 
 import argparse
 
