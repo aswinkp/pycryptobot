@@ -500,6 +500,7 @@ class PublicAPI(AuthAPIBase):
             resp = self.client.get_server_time()
             epoch = int(str(resp['serverTime'])[0:10])
             return datetime.fromtimestamp(epoch)
-        except:
+        except Exception as e:
+            print(e)
             return None
 

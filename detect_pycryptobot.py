@@ -428,7 +428,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 if not (not app.allowSellAtLoss() and margin <= 0):
                     app.notifyTelegram(app.getMarket() + ' (' + app.printGranularity() + ') ' + log_text)
 
-            if (datetime.now()-state.last_buy_time).seconds > 3600 and margin <= 0.5:
+            if (datetime.now()-state.last_buy_time).seconds > 3600 and margin >= 0.05:
                 state.action = "SELL"
                 state.last_action = 'BUY'
                 immediate_action = True
@@ -912,7 +912,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 # show profit and margin if already bought
                 Logger.info(now + ' | ' + app.getMarket() + bullbeartext + ' | ' + app.printGranularity() + ' | Current Price: ' + str(price) + ' | Margin:' + str(margin) + ' | Profit:' + str(profit))
             else:
-                if execute_count > 5:
+                if execute_count >= 5:
                     detect_buyable_coins(quote_currency=app.quote_currency)
                 Logger.info(now + ' | ' + app.getMarket() + bullbeartext + ' | ' + app.printGranularity() + ' | Current Price: ' + str(price))
 
