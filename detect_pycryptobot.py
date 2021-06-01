@@ -86,6 +86,8 @@ elif app.isLive():
                 app.getBaseCurrency())) + ' < 0.1 ' + app.getBaseCurrency() + "\nNote: A manual limit order places a hold on available funds.")
 
 
+execute_count = 0
+
 def getAction(now: datetime = datetime.today().strftime('%Y-%m-%d %H:%M:%S'), app: PyCryptoBot = None, price: float = 0,
               df: pd.DataFrame = pd.DataFrame(), df_last: pd.DataFrame = pd.DataFrame(), last_action: str = 'WAIT') -> str:
     ema12gtema26co = bool(df_last['ema12gtema26co'].values[0])
@@ -193,7 +195,8 @@ def getInterval(df: pd.DataFrame = pd.DataFrame(), app: PyCryptoBot = None, iter
 
 def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading_data=pd.DataFrame()):
     """Trading bot job which runs at a scheduled interval"""
-
+    global execute_count
+    execute_count += 1
     # connectivity check (only when running live)
     if app.isLive() and app.getTime() is None:
         Logger.warning('Your connection to the exchange has gone down, will retry in 1 minute!')
@@ -888,9 +891,9 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                     "sell_time": datetime.now(),
                     "sell_price": price,
                     "last_buy_high": state.last_buy_high,
-                    "last_buy_high_margin": ((price / state.last_buy_high) - 1) * 100,
+                    "last_buy_high_margin": ((state.last_buy_high / state.last_buy_price) - 1) * 100,
                     "margin": margin,
-                    "time_difference": (datetime.now() - state.last_buy_time).seconds,
+                    "time_difference": divmod((datetime.now() - state.last_buy_time).seconds, 60)
                 })
                 if app.shouldSaveGraphs():
                     tradinggraphs = TradingGraphs(ta)
@@ -909,6 +912,8 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 # show profit and margin if already bought
                 Logger.info(now + ' | ' + app.getMarket() + bullbeartext + ' | ' + app.printGranularity() + ' | Current Price: ' + str(price) + ' | Margin:' + str(margin) + ' | Profit:' + str(profit))
             else:
+                if execute_count > 5:
+                    detect_buyable_coins(quote_currency=app.quote_currency)
                 Logger.info(now + ' | ' + app.getMarket() + bullbeartext + ' | ' + app.printGranularity() + ' | Current Price: ' + str(price))
 
             # decrement ignored iteration
@@ -934,6 +939,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
 
 def detect_buyable_coins(quote_currency = "BNB"):
     print("Detecting buyable coins")
+    global execute_count
     binance_coin_pairs = ['WTCBNB', 'BATBNB', 'NEOBNB', 'IOTABNB', 'XLMBNB', 'WABIBNB', 'LTCBNB', 'WAVESBNB', 'ICXBNB',
                           'BLZBNB', 'ZILBNB', 'ONTBNB', 'WANBNB', 'ADABNB', 'ZENBNB', 'EOSBNB', 'THETABNB', 'XRPBNB',
                           'ENJBNB', 'TRXBNB', 'ETCBNB', 'SCBNB', 'MFTBNB', 'VETBNB', 'RVNBNB', 'MITHBNB', 'BTTBNB',
@@ -961,35 +967,31 @@ def detect_buyable_coins(quote_currency = "BNB"):
                        'MFTUSDT', 'KEYUSDT', 'STORMUSDT', 'DOCKUSDT', 'WANUSDT', 'FUNUSDT', 'CVCUSDT', 'CHZUSDT',
                        'BANDUSDT', 'BEAMUSDT', 'XTZUSDT', 'RENUSDT', 'RVNUSDT', 'HCUSDT', 'HBARUSDT', 'NKNUSDT',
                        'STXUSDT', 'KAVAUSDT', 'ARPAUSDT', 'IOTXUSDT', 'RLCUSDT', 'MCOUSDT', 'CTXCUSDT', 'BCHUSDT',
-                       'TROYUSDT', 'VITEUSDT', 'FTTUSDT', 'EURUSDT', 'OGNUSDT', 'DREPUSDT', 'BULLUSDT', 'BEARUSDT',
+                       'TROYUSDT', 'VITEUSDT', 'FTTUSDT', 'OGNUSDT', 'DREPUSDT', 'BULLUSDT', 'BEARUSDT',
                        'ETHBULLUSDT', 'ETHBEARUSDT', 'TCTUSDT', 'WRXUSDT', 'BTSUSDT', 'LSKUSDT', 'BNTUSDT', 'LTOUSDT',
                        'EOSBULLUSDT', 'EOSBEARUSDT', 'XRPBULLUSDT', 'XRPBEARUSDT', 'STRATUSDT', 'AIONUSDT', 'MBLUSDT',
                        'COTIUSDT', 'BNBBULLUSDT', 'BNBBEARUSDT', 'STPTUSDT', 'WTCUSDT', 'DATAUSDT', 'XZCUSDT',
-                       'SOLUSDT', 'CTSIUSDT', 'HIVEUSDT', 'CHRUSDT', 'BTCUPUSDT', 'BTCDOWNUSDT', 'GXSUSDT', 'ARDRUSDT',
+                       'SOLUSDT', 'CTSIUSDT', 'HIVEUSDT', 'CHRUSDT', 'GXSUSDT', 'ARDRUSDT',
                        'LENDUSDT', 'MDTUSDT', 'STMXUSDT', 'KNCUSDT', 'REPUSDT', 'LRCUSDT', 'PNTUSDT', 'COMPUSDT',
-                       'BKRWUSDT', 'SCUSDT', 'ZENUSDT', 'SNXUSDT', 'ETHUPUSDT', 'ETHDOWNUSDT', 'ADAUPUSDT',
-                       'ADADOWNUSDT', 'LINKUPUSDT', 'LINKDOWNUSDT', 'VTHOUSDT', 'DGBUSDT', 'GBPUSDT', 'SXPUSDT',
-                       'MKRUSDT', 'DAIUSDT', 'DCRUSDT', 'STORJUSDT', 'BNBUPUSDT', 'BNBDOWNUSDT', 'XTZUPUSDT',
-                       'XTZDOWNUSDT', 'MANAUSDT', 'YFIUSDT', 'BALUSDT', 'BLZUSDT', 'IRISUSDT', 'KMDUSDT',
+                       'BKRWUSDT', 'SCUSDT', 'ZENUSDT', 'SNXUSDT', 'VTHOUSDT', 'DGBUSDT', 'GBPUSDT', 'SXPUSDT',
+                       'MKRUSDT', 'DCRUSDT', 'STORJUSDT', 'MANAUSDT', 'YFIUSDT', 'BALUSDT', 'BLZUSDT', 'IRISUSDT', 'KMDUSDT',
                        'SRMUSDT', 'ANTUSDT', 'CRVUSDT', 'SANDUSDT', 'OCEANUSDT', 'NMRUSDT', 'DOTUSDT',
                        'LUNAUSDT', 'RSRUSDT', 'WNXMUSDT', 'TRBUSDT', 'BZRXUSDT', 'SUSHIUSDT', 'YFIIUSDT',
-                       'KSMUSDT', 'EGLDUSDT', 'DIAUSDT', 'RUNEUSDT', 'FIOUSDT', 'UMAUSDT', 'EOSUPUSDT', 'EOSDOWNUSDT',
-                       'TRXUPUSDT', 'TRXDOWNUSDT', 'XRPUPUSDT', 'XRPDOWNUSDT', 'DOTUPUSDT', 'DOTDOWNUSDT', 'BELUSDT',
-                       'WINGUSDT', 'LTCUPUSDT', 'LTCDOWNUSDT', 'UNIUSDT', 'NBSUSDT', 'OXTUSDT', 'SUNUSDT', 'AVAXUSDT',
-                       'HNTUSDT', 'FLMUSDT', 'UNIUPUSDT', 'UNIDOWNUSDT', 'ORNUSDT', 'UTKUSDT', 'XVSUSDT', 'ALPHAUSDT',
-                       'AAVEUSDT', 'NEARUSDT', 'SXPUPUSDT', 'SXPDOWNUSDT', 'FILUSDT', 'FILUPUSDT', 'FILDOWNUSDT',
-                       'YFIUPUSDT', 'YFIDOWNUSDT', 'INJUSDT', 'AUDIOUSDT', 'CTKUSDT', 'BCHUPUSDT', 'BCHDOWNUSDT',
+                       'KSMUSDT', 'EGLDUSDT', 'DIAUSDT', 'RUNEUSDT', 'FIOUSDT', 'UMAUSDT', 'BELUSDT',
+                       'WINGUSDT', 'UNIUSDT', 'NBSUSDT', 'OXTUSDT', 'SUNUSDT', 'AVAXUSDT',
+                       'HNTUSDT', 'FLMUSDT', 'ORNUSDT', 'UTKUSDT', 'XVSUSDT', 'ALPHAUSDT',
+                       'AAVEUSDT', 'NEARUSDT', 'FILUSDT',
+                        'INJUSDT', 'AUDIOUSDT', 'CTKUSDT',
                        'AKROUSDT', 'AXSUSDT', 'HARDUSDT', 'DNTUSDT', 'STRAXUSDT', 'UNFIUSDT', 'ROSEUSDT', 'AVAUSDT',
-                       'XEMUSDT', 'AAVEUPUSDT', 'AAVEDOWNUSDT', 'SKLUSDT', 'SUSDUSDT', 'SUSHIUPUSDT', 'SUSHIDOWNUSDT',
-                       'XLMUPUSDT', 'XLMDOWNUSDT', 'GRTUSDT', 'JUVUSDT', 'PSGUSDT', '1INCHUSDT', 'REEFUSDT', 'OGUSDT',
+                       'XEMUSDT', 'SKLUSDT', 'SUSDUSDT',
+                        'GRTUSDT', 'JUVUSDT', 'PSGUSDT', '1INCHUSDT', 'REEFUSDT', 'OGUSDT',
                        'ATMUSDT', 'ASRUSDT', 'CELOUSDT', 'RIFUSDT', 'BTCSTUSDT', 'TRUUSDT', 'CKBUSDT', 'TWTUSDT',
                        'FIROUSDT', 'LITUSDT', 'SFPUSDT', 'DODOUSDT', 'CAKEUSDT', 'ACMUSDT', 'BADGERUSDT', 'FISUSDT',
                        'OMUSDT', 'PONDUSDT', 'DEGOUSDT', 'ALICEUSDT', 'LINAUSDT', 'PERPUSDT', 'RAMPUSDT', 'SUPERUSDT',
-                       'CFXUSDT', 'EPSUSDT', 'AUTOUSDT', 'TKOUSDT', 'PUNDIXUSDT', 'TLMUSDT', '1INCHUPUSDT',
-                       '1INCHDOWNUSDT', 'BTGUSDT', 'MIRUSDT', 'BARUSDT', 'FORTHUSDT', 'BAKEUSDT', 'BURGERUSDT',
+                       'CFXUSDT', 'EPSUSDT', 'AUTOUSDT', 'TKOUSDT', 'PUNDIXUSDT', 'TLMUSDT', 'BTGUSDT', 'MIRUSDT', 'BARUSDT', 'FORTHUSDT', 'BAKEUSDT', 'BURGERUSDT',
                        'SLPUSDT', 'SHIBUSDT', 'ICPUSDT', 'ARUSDT', 'POLSUSDT', 'MDXUSDT', 'MASKUSDT']
     busd_coin_pairs = ['BNBBUSD', 'BTCBUSD', 'XRPBUSD', 'ETHBUSD', 'LTCBUSD', 'LINKBUSD', 'ETCBUSD', 'TRXBUSD',
-                       'EOSBUSD', 'XLMBUSD', 'ADABUSD', 'BCHBUSD', 'QTUMBUSD', 'VETBUSD', 'EURBUSD', 'ICXBUSD',
+                       'EOSBUSD', 'XLMBUSD', 'ADABUSD', 'BCHBUSD', 'QTUMBUSD', 'VETBUSD', 'ICXBUSD',
                        'BNTBUSD', 'ATOMBUSD', 'DASHBUSD', 'NEOBUSD', 'WAVESBUSD', 'XTZBUSD', 'BATBUSD', 'ENJBUSD',
                        'NANOBUSD', 'ONTBUSD', 'RVNBUSD', 'ALGOBUSD', 'BTTBUSD', 'TOMOBUSD', 'XMRBUSD', 'ZECBUSD',
                        'DATABUSD', 'SOLBUSD', 'CTSIBUSD', 'HBARBUSD', 'MATICBUSD', 'WRXBUSD', 'ZILBUSD', 'KNCBUSD',
@@ -1119,6 +1121,7 @@ def detect_buyable_coins(quote_currency = "BNB"):
         coin_pair = buy_dataframe.index[0]
         from models.config import binanceParseMarket
         app.market, app.base_currency, app.quote_currency = binanceParseMarket(coin_pair)
+        execute_count = 0
         print("Sending buy signal for", coin_pair)
         executeJob(s, app, state)
         s.run()
