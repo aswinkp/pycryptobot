@@ -251,6 +251,7 @@ class AuthAPI(AuthAPIBase):
         except Exception as err:
             ts = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             Logger.error(ts + ' Binance ' + ' marketBuy ' + str(err))
+            print("while buying market {} for {}".format(market, quote_quantity))
             return []       
 
     def marketSell(self, market: str='', base_quantity: float=0) -> list:
