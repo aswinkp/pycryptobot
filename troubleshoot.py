@@ -17,7 +17,7 @@ print (df_fib)
 print (df_sr)
 
 graphs = TradingGraphs(ta)
-#graphs.renderBuySellSignalema326MACD(saveOnly=False)
+#graphs.renderBuySellSignalema526MACD(saveOnly=False)
 #graphs = TradingGraphs(ta)
 #graphs.renderPercentageChangeHistogram()
 #graphs.renderCumulativeReturn()

@@ -342,7 +342,7 @@ class PyCryptoBot():
     def getSmartSwitch(self):
         return self.smart_switch
 
-    def is1hema326Bull(self):
+    def is1hema526Bull(self):
         try:
             if self.exchange == 'coinbasepro':
                 api = CBPublicAPI()
@@ -354,10 +354,10 @@ class PyCryptoBot():
                 return False
 
             ta = TechnicalAnalysis(df_data)
-            ta.addEMA(12)
-            ta.addEMA(26)
+            ta.addEMA(5)
+            ta.addEMA(9)
             df_last = ta.getDataFrame().copy().iloc[-1,:]
-            df_last['bull'] = df_last['ema3'] > df_last['ema6']
+            df_last['bull'] = df_last['ema5'] > df_last['ema9']
             return bool(df_last['bull'])
         except Exception:
             return False
@@ -406,7 +406,7 @@ class PyCryptoBot():
         except Exception:
             return False
 
-    def is6hema326Bull(self):
+    def is6hema526Bull(self):
         try:
             if self.exchange == 'coinbasepro':
                 api = CBPublicAPI()
@@ -418,10 +418,10 @@ class PyCryptoBot():
                 return False
 
             ta = TechnicalAnalysis(df_data)
-            ta.addEMA(12)
-            ta.addEMA(26)
+            ta.addEMA(5)
+            ta.addEMA(9)
             df_last = ta.getDataFrame().copy().iloc[-1, :]
-            df_last['bull'] = df_last['ema3'] > df_last['ema6']
+            df_last['bull'] = df_last['ema5'] > df_last['ema9']
             return bool(df_last['bull'])
         except Exception:
             return False

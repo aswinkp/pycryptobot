@@ -87,20 +87,20 @@ elif app.isLive():
 
 def getAction(now: datetime = datetime.today().strftime('%Y-%m-%d %H:%M:%S'), app: PyCryptoBot = None, price: float = 0,
               df: pd.DataFrame = pd.DataFrame(), df_last: pd.DataFrame = pd.DataFrame(), last_action: str = 'WAIT') -> str:
-    ema3gtema6co = bool(df_last['ema3gtema6co'].values[0])
+    ema5gtema9co = bool(df_last['ema5gtema9co'].values[0])
     macdgtsignal = bool(df_last['macdgtsignal'].values[0])
     goldencross = bool(df_last['goldencross'].values[0])
     obv_pc = float(df_last['obv_pc'].values[0])
     elder_ray_buy = bool(df_last['eri_buy'].values[0])
-    ema3gtema6 = bool(df_last['ema3gtema6'].values[0])
+    ema5gtema9 = bool(df_last['ema5gtema9'].values[0])
     macdgtsignalco = bool(df_last['macdgtsignalco'].values[0])
-    ema3ltema6co = bool(df_last['ema3ltema6co'].values[0])
+    ema5ltema9co = bool(df_last['ema5ltema9co'].values[0])
     macdltsignal = bool(df_last['macdltsignal'].values[0])
 
     action = '' 
 
     # criteria for a buy signal
-    if ema3gtema6co is True \
+    if ema5gtema9co is True \
             and (macdgtsignal is True or app.disableBuyMACD()) \
             and (goldencross is True or app.disableBullOnly()) \
             and (obv_pc > -5 or app.disableBuyOBV()) \
@@ -110,7 +110,7 @@ def getAction(now: datetime = datetime.today().strftime('%Y-%m-%d %H:%M:%S'), ap
         action = 'BUY'
 
         Logger.debug('*** Buy Signal ***')
-        Logger.debug(f'ema3gtema6co: {ema3gtema6co}')
+        Logger.debug(f'ema5gtema9co: {ema5gtema9co}')
 
         if not app.disableBuyMACD():
             Logger.debug(f'macdgtsignal: {macdgtsignal}')
@@ -126,7 +126,7 @@ def getAction(now: datetime = datetime.today().strftime('%Y-%m-%d %H:%M:%S'), ap
 
         Logger.debug(f'last_action: {last_action}')
 
-    elif ema3gtema6 is True \
+    elif ema5gtema9 is True \
             and macdgtsignalco is True \
             and (goldencross is True or app.disableBullOnly()) \
             and (obv_pc > -5 or app.disableBuyOBV()) \
@@ -136,7 +136,7 @@ def getAction(now: datetime = datetime.today().strftime('%Y-%m-%d %H:%M:%S'), ap
         action = 'BUY'
 
         Logger.debug('*** Buy Signal ***')
-        Logger.debug(f'ema3gtema6: {ema3gtema6}')
+        Logger.debug(f'ema5gtema9: {ema5gtema9}')
         Logger.debug(f'macdgtsignalco: {macdgtsignalco}')
 
         if not app.disableBullOnly():
@@ -152,14 +152,14 @@ def getAction(now: datetime = datetime.today().strftime('%Y-%m-%d %H:%M:%S'), ap
         
 
     # criteria for a sell signal
-    elif ema3ltema6co is True \
+    elif ema5ltema9co is True \
             and (macdltsignal is True or app.disableBuyMACD()) \
             and last_action not in ['', 'SELL']:
 
         action = 'SELL'
 
         Logger.debug('*** Sell Signal ***')
-        Logger.debug(f'ema3ltema6co: {ema3ltema6co}')
+        Logger.debug(f'ema5ltema9co: {ema5ltema9co}')
         Logger.debug(f'macdltsignal: {macdltsignal}')
         Logger.debug(f'last_action: {last_action}')
 
@@ -230,7 +230,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
 
     formatted_current_df_index = f'{current_df_index} 00:00:00' if len(current_df_index) == 10 else current_df_index
 
-    if app.getSmartSwitch() == 1 and app.getGranularity() == 3600 and app.is1hema326Bull() is True and app.is6hema326Bull() is True:
+    if app.getSmartSwitch() == 1 and app.getGranularity() == 3600 and app.is1hema526Bull() is True and app.is6hema526Bull() is True:
         Logger.info('*** smart switch from granularity 3600 (1 hour) to 900 (15 min) ***')
 
         app.notifyTelegram(app.getMarket() + " smart switch from granularity 3600 (1 hour) to 900 (15 min)")
@@ -239,7 +239,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
         list(map(s.cancel, s.queue))
         s.enter(5, 1, executeJob, (sc, app, state))
 
-    if app.getSmartSwitch() == 1 and app.getGranularity() == 900 and app.is1hema326Bull() is False and app.is6hema326Bull() is False:
+    if app.getSmartSwitch() == 1 and app.getGranularity() == 900 and app.is1hema526Bull() is False and app.is6hema526Bull() is False:
         Logger.info("*** smart switch from granularity 900 (15 min) to 3600 (1 hour) ***")
 
         app.notifyTelegram(app.getMarket() + " smart switch from granularity 900 (15 min) to 3600 (1 hour)")
@@ -278,13 +278,13 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
             raise Exception(app.getMarket() + ' is unsuitable for trading, quote price is less than 0.0001!')
 
         # technical indicators
-        ema3gtema6 = bool(df_last['ema3gtema6'].values[0])
-        ema3gtema6co = bool(df_last['ema3gtema6co'].values[0])
+        ema5gtema9 = bool(df_last['ema5gtema9'].values[0])
+        ema5gtema9co = bool(df_last['ema5gtema9co'].values[0])
         goldencross = bool(df_last['goldencross'].values[0])
         macdgtsignal = bool(df_last['macdgtsignal'].values[0])
         macdgtsignalco = bool(df_last['macdgtsignalco'].values[0])
-        ema3ltema6 = bool(df_last['ema3ltema6'].values[0])
-        ema3ltema6co = bool(df_last['ema3ltema6co'].values[0])
+        ema5ltema9 = bool(df_last['ema5ltema9'].values[0])
+        ema5ltema9co = bool(df_last['ema5ltema9co'].values[0])
         macdltsignal = bool(df_last['macdltsignal'].values[0])
         macdltsignalco = bool(df_last['macdltsignalco'].values[0])
         obv = float(df_last['obv'].values[0])
@@ -444,7 +444,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
             truncate = functools.partial(_truncate, n=precision)
 
             price_text = 'Close: ' + truncate(price)
-            ema_text = app.compare(df_last['ema3'].values[0], df_last['ema6'].values[0], 'ema3/6', precision)
+            ema_text = app.compare(df_last['ema5'].values[0], df_last['ema9'].values[0], 'ema5/9', precision)
 
             macd_text = ''
             if app.disableBuyMACD() is False:
@@ -535,19 +535,19 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 app.notifyTelegram(app.getMarket() + ' (' + app.printGranularity() + ') ' + log_text)
 
 
-            # ema3 prefix/suffix are aligned to 3 characters
+            # ema5 prefix/suffix are aligned to 3 characters
             ema_co_prefix = '   '
             ema_co_suffix = '   '
-            if ema3gtema6co is True:
+            if ema5gtema9co is True:
                 ema_co_prefix = '*^ '
                 ema_co_suffix = ' ^*'
-            elif ema3ltema6co is True:
+            elif ema5ltema9co is True:
                 ema_co_prefix = '*v '
                 ema_co_suffix = ' v*'
-            elif ema3gtema6 is True:
+            elif ema5gtema9 is True:
                 ema_co_prefix = ' ^ '
                 ema_co_suffix = ' ^ '
-            elif ema3ltema6 is True:
+            elif ema5ltema9 is True:
                 ema_co_prefix = ' v '
                 ema_co_suffix = ' v '
 
@@ -616,12 +616,12 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                     Logger.debug('-- Margin: ' + margin_text + ' --')
 
                 Logger.debug('price: ' + truncate(price))
-                Logger.debug('ema3: ' + truncate(float(df_last['ema3'].values[0])))
-                Logger.debug('ema6: ' + truncate(float(df_last['ema6'].values[0])))
-                Logger.debug('ema3gtema6co: ' + str(ema3gtema6co))
-                Logger.debug('ema3gtema6: ' + str(ema3gtema6))
-                Logger.debug('ema3ltema6co: ' + str(ema3ltema6co))
-                Logger.debug('ema3ltema6: ' + str(ema3ltema6))
+                Logger.debug('ema5: ' + truncate(float(df_last['ema5'].values[0])))
+                Logger.debug('ema9: ' + truncate(float(df_last['ema9'].values[0])))
+                Logger.debug('ema5gtema9co: ' + str(ema5gtema9co))
+                Logger.debug('ema5gtema9: ' + str(ema5gtema9))
+                Logger.debug('ema5ltema9co: ' + str(ema5ltema9co))
+                Logger.debug('ema5ltema9: ' + str(ema5ltema9))
                 Logger.debug('sma50: ' + truncate(float(df_last['sma50'].values[0])))
                 Logger.debug('sma200: ' + truncate(float(df_last['sma200'].values[0])))
                 Logger.debug('macd: ' + truncate(float(df_last['macd'].values[0])))
@@ -642,27 +642,27 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 Logger.info('--------------------------------------------------------------------------------')
                 txt = '            Close : ' + truncate(price)
                 Logger.info(' | ' + txt + (' ' * (75 - len(txt))) + ' | ')
-                txt = '            ema3 : ' + truncate(float(df_last['ema3'].values[0]))
+                txt = '            ema5 : ' + truncate(float(df_last['ema5'].values[0]))
                 Logger.info(' | ' + txt + (' ' * (75 - len(txt))) + ' | ')
-                txt = '            ema6 : ' + truncate(float(df_last['ema6'].values[0]))
+                txt = '            ema9 : ' + truncate(float(df_last['ema9'].values[0]))
                 Logger.info(' | ' + txt + (' ' * (75 - len(txt))) + ' | ')
-                txt = '   Crossing Above : ' + str(ema3gtema6co)
+                txt = '   Crossing Above : ' + str(ema5gtema9co)
                 Logger.info(' | ' + txt + (' ' * (75 - len(txt))) + ' | ')
-                txt = '  Currently Above : ' + str(ema3gtema6)
+                txt = '  Currently Above : ' + str(ema5gtema9)
                 Logger.info(' | ' + txt + (' ' * (75 - len(txt))) + ' | ')
-                txt = '   Crossing Below : ' + str(ema3ltema6co)
+                txt = '   Crossing Below : ' + str(ema5ltema9co)
                 Logger.info(' | ' + txt + (' ' * (75 - len(txt))) + ' | ')
-                txt = '  Currently Below : ' + str(ema3ltema6)
+                txt = '  Currently Below : ' + str(ema5ltema9)
                 Logger.info(' | ' + txt + (' ' * (75 - len(txt))) + ' | ')
 
-                if (ema3gtema6 is True and ema3gtema6co is True):
-                    txt = '        Condition : ema3 is currently crossing above ema6'
-                elif (ema3gtema6 is True and ema3gtema6co is False):
-                    txt = '        Condition : ema3 is currently above ema6 and has crossed over'
-                elif (ema3ltema6 is True and ema3ltema6co is True):
-                    txt = '        Condition : ema3 is currently crossing below ema6'
-                elif (ema3ltema6 is True and ema3ltema6co is False):
-                    txt = '        Condition : ema3 is currently below ema6 and has crossed over'
+                if (ema5gtema9 is True and ema5gtema9co is True):
+                    txt = '        Condition : ema5 is currently crossing above ema9'
+                elif (ema5gtema9 is True and ema5gtema9co is False):
+                    txt = '        Condition : ema5 is currently above ema9 and has crossed over'
+                elif (ema5ltema9 is True and ema5ltema9co is True):
+                    txt = '        Condition : ema5 is currently crossing below ema9'
+                elif (ema5ltema9 is True and ema5ltema9co is False):
+                    txt = '        Condition : ema5 is currently below ema9 and has crossed over'
                 else:
                     txt = '        Condition : -'
                 Logger.info(' | ' + txt + (' ' * (75 - len(txt))) + ' | ')
