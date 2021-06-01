@@ -428,7 +428,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 if not (not app.allowSellAtLoss() and margin <= 0):
                     app.notifyTelegram(app.getMarket() + ' (' + app.printGranularity() + ') ' + log_text)
 
-            if (datetime.now()-state.last_buy_time).seconds > 3600 and margin >= 0.05:
+            if (datetime.now()-state.last_buy_time).seconds > 3600*3 and margin >= 0.05:
                 state.action = "SELL"
                 state.last_action = 'BUY'
                 immediate_action = True
