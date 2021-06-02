@@ -956,7 +956,7 @@ def detect_buyable_coins(quote_currency = "BNB"):
                           'ICPBNB']
     # binance_coin_pairs = ['WTCBNB', 'BATBNB', 'NEOBNB', 'IOTABNB', 'XLMBNB', 'WABIBNB', 'LTCBNB', 'WAVESBNB', 'ICXBNB']
 
-    usdt_coin_pairs = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'BCCUSDT', 'NEOUSDT', 'LTCUSDT', 'QTUMUSDT', 'ADAUSDT',
+    usdt_coin_pairs = ['BTCUSDT', 'ETHUSDT', 'BCCUSDT', 'NEOUSDT', 'LTCUSDT', 'QTUMUSDT', 'ADAUSDT',
                        'XRPUSDT', 'EOSUSDT', 'IOTAUSDT', 'XLMUSDT', 'ONTUSDT', 'TRXUSDT', 'ETCUSDT',
                        'ICXUSDT', 'VENUSDT', 'NULSUSDT', 'VETUSDT', 'BCHABCUSDT', 'BCHSVUSDT',
                        'LINKUSDT', 'WAVESUSDT', 'BTTUSDT', 'USDSUSDT', 'ONGUSDT', 'HOTUSDT', 'ZILUSDT', 'ZRXUSDT',
@@ -970,7 +970,7 @@ def detect_buyable_coins(quote_currency = "BNB"):
                        'TROYUSDT', 'VITEUSDT', 'FTTUSDT', 'OGNUSDT', 'DREPUSDT', 'BULLUSDT', 'BEARUSDT',
                        'ETHBULLUSDT', 'ETHBEARUSDT', 'TCTUSDT', 'WRXUSDT', 'BTSUSDT', 'LSKUSDT', 'BNTUSDT', 'LTOUSDT',
                        'EOSBULLUSDT', 'EOSBEARUSDT', 'XRPBULLUSDT', 'XRPBEARUSDT', 'STRATUSDT', 'AIONUSDT', 'MBLUSDT',
-                       'COTIUSDT', 'BNBBULLUSDT', 'BNBBEARUSDT', 'STPTUSDT', 'WTCUSDT', 'DATAUSDT', 'XZCUSDT',
+                       'COTIUSDT', 'STPTUSDT', 'WTCUSDT', 'DATAUSDT', 'XZCUSDT',
                        'SOLUSDT', 'CTSIUSDT', 'HIVEUSDT', 'CHRUSDT', 'GXSUSDT', 'ARDRUSDT',
                        'LENDUSDT', 'MDTUSDT', 'STMXUSDT', 'KNCUSDT', 'REPUSDT', 'LRCUSDT', 'PNTUSDT', 'COMPUSDT',
                        'BKRWUSDT', 'SCUSDT', 'ZENUSDT', 'SNXUSDT', 'VTHOUSDT', 'DGBUSDT', 'GBPUSDT', 'SXPUSDT',
@@ -990,7 +990,7 @@ def detect_buyable_coins(quote_currency = "BNB"):
                        'OMUSDT', 'PONDUSDT', 'DEGOUSDT', 'ALICEUSDT', 'LINAUSDT', 'PERPUSDT', 'RAMPUSDT', 'SUPERUSDT',
                        'CFXUSDT', 'EPSUSDT', 'AUTOUSDT', 'TKOUSDT', 'PUNDIXUSDT', 'TLMUSDT', 'BTGUSDT', 'MIRUSDT', 'BARUSDT', 'FORTHUSDT', 'BAKEUSDT', 'BURGERUSDT',
                        'SLPUSDT', 'SHIBUSDT', 'ICPUSDT', 'ARUSDT', 'POLSUSDT', 'MDXUSDT', 'MASKUSDT']
-    busd_coin_pairs = ['BNBBUSD', 'BTCBUSD', 'XRPBUSD', 'ETHBUSD', 'LTCBUSD', 'LINKBUSD', 'ETCBUSD', 'TRXBUSD',
+    busd_coin_pairs = ['BTCBUSD', 'XRPBUSD', 'ETHBUSD', 'LTCBUSD', 'LINKBUSD', 'ETCBUSD', 'TRXBUSD',
                        'EOSBUSD', 'XLMBUSD', 'ADABUSD', 'BCHBUSD', 'QTUMBUSD', 'VETBUSD', 'ICXBUSD',
                        'BNTBUSD', 'ATOMBUSD', 'DASHBUSD', 'NEOBUSD', 'WAVESBUSD', 'XTZBUSD', 'BATBUSD', 'ENJBUSD',
                        'NANOBUSD', 'ONTBUSD', 'RVNBUSD', 'ALGOBUSD', 'BTTBUSD', 'TOMOBUSD', 'XMRBUSD', 'ZECBUSD',
