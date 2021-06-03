@@ -72,7 +72,8 @@ class TechnicalAnalysis():
 
         self.addEMABuySignals()
         self.addSMABuySignals()
-        self.addMACDBuySignals()       
+        self.addMACDBuySignals()
+        self.add_rri_signals()
 
         self.addCandleAstralBuy()
         self.addCandleAstralSell()
@@ -980,3 +981,12 @@ class TechnicalAnalysis():
 
     def __truncate(self, f, n) -> float:
         return floor(f * 10 ** n) / 10 ** n
+
+
+    def add_rri_signals(self, df):
+
+        if not isinstance(self.df, DataFrame):
+            raise TypeError('Pandas DataFrame required.')
+        df['rri'] = (df['close'] - df['open']) / (df['high'] - df['low'])
+        df['rri_buy'] = ((df['rri'] <= -0.75) & (df['rri'].shift(1) > -0.75))
+        df['rri_sell'] = ((df['rri'] >= 0.75) & (df['rri'].shift(1) < 0.75))

@@ -1106,7 +1106,7 @@ def detect_buyable_coins(quote_currency = "BNB"):
             if elder_ray_buy: buy_score += 2
             if not elder_ray_sell: buy_score += 2
 
-            dataframe_dict[coin_pair] = [state.action, app.getGranularity(), buy_score, datetime.now(), price, ema3gtema6, ema3gtema6co,
+            dataframe_dict[coin_pair] = [state.action, app.getGranularity(), buy_score, datetime.now(), price, ema12gtema26, ema12gtema26co,
                                          goldencross, macdgtsignal, macdgtsignalco, obv, obv_pc, elder_ray_buy,
                                          elder_ray_sell]
     dataframe = pd.DataFrame(dataframe_dict.values(), index=dataframe_dict.keys(),
