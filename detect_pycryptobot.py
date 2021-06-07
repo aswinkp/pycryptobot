@@ -15,6 +15,7 @@ from models.helper.MarginHelper import calculate_margin
 from models.helper.csv_writer import write_dict_to_csv
 from views.TradingGraphs import TradingGraphs
 from models.helper.LogHelper import Logger
+from time import sleep
 
 sys.tracebacklimit = 1
 
@@ -428,6 +429,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 if not (not app.allowSellAtLoss() and margin <= 0):
                     app.notifyTelegram(app.getMarket() + ' (' + app.printGranularity() + ') ' + log_text)
 
+            # if greater than 3 hours, sell if margin greater than 0.05
             if (datetime.now()-state.last_buy_time).seconds > 3600*3 and margin >= 0.05:
                 state.action = "SELL"
                 state.last_action = 'BUY'
@@ -1128,7 +1130,6 @@ def detect_buyable_coins(quote_currency = "BNB"):
     else:
         # wait for 10 min and execute again. if not get the index of biggest score
         print("None of the coin pairs get buy signals atm. Waiting for 15 minutes")
-        from time import sleep
         sleep(900)
         detect_buyable_coins(quote_currency=quote_currency)
 

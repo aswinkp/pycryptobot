@@ -983,10 +983,15 @@ class TechnicalAnalysis():
         return floor(f * 10 ** n) / 10 ** n
 
 
-    def add_rri_signals(self, df):
-
+    def add_rri_signals(self):
         if not isinstance(self.df, DataFrame):
             raise TypeError('Pandas DataFrame required.')
-        df['rri'] = (df['close'] - df['open']) / (df['high'] - df['low'])
-        df['rri_buy'] = ((df['rri'] <= -0.75) & (df['rri'].shift(1) > -0.75))
-        df['rri_sell'] = ((df['rri'] >= 0.75) & (df['rri'].shift(1) < 0.75))
+        self.df['rri'] = (self.df['close'] - self.df['open']) / (self.df['high'] - self.df['low'])
+        self.df['rri_buy'] = ((self.df['rri'] <= -0.75) & (self.df['rri'].shift(1) > -0.75))
+        self.df['rri_sell'] = ((self.df['rri'] >= 0.75) & (self.df['rri'].shift(1) < 0.75))
+        self.df['last_3_rri_buy'] = (self.df['rri_buy'] | self.df['rri_buy'].shift(1) |  self.df['rri_buy'].shift(2))
+        self.df['last_5_rri_buy'] = (self.df['last_3_rri_buy'] | self.df['rri_buy'].shift(3) |  self.df['rri_buy'].shift(4))
+        self.df['last_3_rri_sell'] = (self.df['rri_sell'] | self.df['rri_sell'].shift(1) | self.df['rri_sell'].shift(2))
+        self.df['last_5_rri_sell'] = (self.df['last_3_rri_sell'] | self.df['rri_sell'].shift(3) | self.df['rri_sell'].shift(4))
+        # self.df['last_3_rri'] = 0
+        # self.df['last_5_rri'] = 0
