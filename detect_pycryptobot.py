@@ -100,6 +100,7 @@ def getAction(now: datetime = datetime.today().strftime('%Y-%m-%d %H:%M:%S'), ap
     macdgtsignalco = bool(df_last['macdgtsignalco'].values[0])
     ema12ltema26co = bool(df_last['ema12ltema26co'].values[0])
     macdltsignal = bool(df_last['macdltsignal'].values[0])
+    rri_buy = bool(df_last['rri_buy'].values[0])
 
     action = '' 
 
@@ -153,7 +154,17 @@ def getAction(now: datetime = datetime.today().strftime('%Y-%m-%d %H:%M:%S'), ap
             Logger.debug(f'elder_ray_buy: {elder_ray_buy}')
 
         Logger.debug(f'last_action: {last_action}')
-        
+
+    elif rri_buy is True \
+            and (goldencross is True or app.disableBullOnly()) \
+            and (obv_pc > -5 or app.disableBuyOBV()) \
+            and (elder_ray_buy is True or app.disableBuyElderRay()) \
+            and last_action != 'BUY':
+
+        action = 'BUY'
+
+        Logger.debug('*** Buy Signal ***')
+        Logger.debug(f'rri_buy: {rri_buy}')
 
     # criteria for a sell signal
     elif ema12ltema26co is True \
@@ -296,6 +307,13 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
         obv_pc = float(df_last['obv_pc'].values[0])
         elder_ray_buy = bool(df_last['eri_buy'].values[0])
         elder_ray_sell = bool(df_last['eri_sell'].values[0])
+        rri = df_last['rri'].values[0]
+        last_3_rri_buy = df_last['last_3_rri_buy'].values[0]
+        last_5_rri_buy = df_last['last_5_rri_buy'].values[0]
+        last_3_rri_sell = df_last['last_3_rri_sell'].values[0]
+        last_5_rri_sell = df_last['last_5_rri_sell'].values[0]
+        rri_buy = df_last['rri_buy'].values[0]
+        rri_sell = df_last['rri_sell'].values[0]
 
         # if simulation interations < 200 set goldencross to true
         if app.isSimulation() and state.iterations < 200:
@@ -430,7 +448,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                     app.notifyTelegram(app.getMarket() + ' (' + app.printGranularity() + ') ' + log_text)
 
             # if greater than 3 hours, sell if margin greater than 0.05
-            if (datetime.now()-state.last_buy_time).seconds > 3600*3 and margin >= 0.05:
+            if (datetime.now()-state.last_buy_time).seconds > 3600 and margin >= 0.05:
                 state.action = "SELL"
                 state.last_action = 'BUY'
                 immediate_action = True
@@ -890,12 +908,11 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                     "market": app.getMarket(),
                     "buy_time": state.last_buy_time,
                     "buy_price": state.last_buy_price,
+                    "last_buy_high_margin": ((state.last_buy_high / state.last_buy_price) - 1) * 100,
                     "sell_time": datetime.now(),
                     "sell_price": price,
-                    "last_buy_high": state.last_buy_high,
-                    "last_buy_high_margin": ((state.last_buy_high / state.last_buy_price) - 1) * 100,
                     "margin": margin,
-                    "time_difference": divmod((datetime.now() - state.last_buy_time).seconds, 60)
+                    "time_difference": divmod(divmod((datetime.now() - state.last_buy_time).seconds, 60)[0], 60)
                 })
                 if app.shouldSaveGraphs():
                     tradinggraphs = TradingGraphs(ta)
@@ -975,7 +992,7 @@ def detect_buyable_coins(quote_currency = "BNB"):
                        'COTIUSDT', 'STPTUSDT', 'WTCUSDT', 'DATAUSDT', 'XZCUSDT',
                        'SOLUSDT', 'CTSIUSDT', 'HIVEUSDT', 'CHRUSDT', 'GXSUSDT', 'ARDRUSDT',
                        'LENDUSDT', 'MDTUSDT', 'STMXUSDT', 'KNCUSDT', 'REPUSDT', 'LRCUSDT', 'PNTUSDT', 'COMPUSDT',
-                       'BKRWUSDT', 'SCUSDT', 'ZENUSDT', 'SNXUSDT', 'VTHOUSDT', 'DGBUSDT', 'GBPUSDT', 'SXPUSDT',
+                       'BKRWUSDT', 'SCUSDT', 'ZENUSDT', 'SNXUSDT', 'VTHOUSDT', 'DGBUSDT', 'SXPUSDT',
                        'MKRUSDT', 'DCRUSDT', 'STORJUSDT', 'MANAUSDT', 'YFIUSDT', 'BALUSDT', 'BLZUSDT', 'IRISUSDT', 'KMDUSDT',
                        'SRMUSDT', 'ANTUSDT', 'CRVUSDT', 'SANDUSDT', 'OCEANUSDT', 'NMRUSDT', 'DOTUSDT',
                        'LUNAUSDT', 'RSRUSDT', 'WNXMUSDT', 'TRBUSDT', 'BZRXUSDT', 'SUSHIUSDT', 'YFIIUSDT',
@@ -997,7 +1014,7 @@ def detect_buyable_coins(quote_currency = "BNB"):
                        'BNTBUSD', 'ATOMBUSD', 'DASHBUSD', 'NEOBUSD', 'WAVESBUSD', 'XTZBUSD', 'BATBUSD', 'ENJBUSD',
                        'NANOBUSD', 'ONTBUSD', 'RVNBUSD', 'ALGOBUSD', 'BTTBUSD', 'TOMOBUSD', 'XMRBUSD', 'ZECBUSD',
                        'DATABUSD', 'SOLBUSD', 'CTSIBUSD', 'HBARBUSD', 'MATICBUSD', 'WRXBUSD', 'ZILBUSD', 'KNCBUSD',
-                       'LRCBUSD', 'IQBUSD', 'GBPBUSD', 'DGBBUSD', 'COMPBUSD', 'SXPBUSD', 'SNXBUSD', 'MKRBUSD',
+                       'LRCBUSD', 'IQBUSD', 'DGBBUSD', 'COMPBUSD', 'SXPBUSD', 'SNXBUSD', 'MKRBUSD',
                        'RUNEBUSD', 'MANABUSD', 'DOGEBUSD', 'ZRXBUSD', 'FIOBUSD', 'AVABUSD', 'IOTABUSD',
                        'BALBUSD', 'YFIBUSD', 'SRMBUSD', 'ANTBUSD', 'CRVBUSD', 'SANDBUSD', 'OCEANBUSD',
                        'NMRBUSD', 'DOTBUSD', 'LUNABUSD', 'IDEXBUSD', 'RSRBUSD', 'TRBBUSD', 'BZRXBUSD', 'SUSHIBUSD',
@@ -1094,27 +1111,41 @@ def detect_buyable_coins(quote_currency = "BNB"):
             obv_pc = float(df_last['obv_pc'].values[0])
             elder_ray_buy = bool(df_last['eri_buy'].values[0])
             elder_ray_sell = bool(df_last['eri_sell'].values[0])
+            rri = df_last['rri'].values[0]
+            last_3_rri_buy = df_last['last_3_rri_buy'].values[0]
+            last_5_rri_buy = df_last['last_5_rri_buy'].values[0]
+            last_3_rri_sell = df_last['last_3_rri_sell'].values[0]
+            last_5_rri_sell = df_last['last_5_rri_sell'].values[0]
+            rri_buy = df_last['rri_buy'].values[0]
+            rri_sell = df_last['rri_sell'].values[0]
 
             state.action = getAction(now, app, price, df, df_last, state.last_action)
 
             buy_score = 0
             if ema12gtema26: buy_score += 3
-            if ema12gtema26co: buy_score += 2
+            if ema12gtema26co: buy_score += 3
             if macdgtsignal: buy_score += 3
-            if goldencross: buy_score += 3
-            if macdgtsignalco: buy_score +=2
-            if macdgtsignal: buy_score += 2
-            if obv_pc > -5: buy_score += 4
+            if goldencross: buy_score += 2
+            if macdgtsignalco: buy_score +=3
+            if obv_pc > -5: buy_score += 3
             if elder_ray_buy: buy_score += 2
             if not elder_ray_sell: buy_score += 2
+            if rri_buy and (ema12gtema26 or ema12gtema26co) and (ema12gtema26co or macdgtsignalco):
+                buy_score += 10
+            elif rri_buy and (ema12gtema26 and macdgtsignal):
+                buy_score += 8
+            elif rri_buy and (ema12gtema26 or macdgtsignal):
+                buy_score += 6
+            elif rri_buy:
+                buy_score += 4
 
             dataframe_dict[coin_pair] = [state.action, app.getGranularity(), buy_score, datetime.now(), price, ema12gtema26, ema12gtema26co,
                                          goldencross, macdgtsignal, macdgtsignalco, obv, obv_pc, elder_ray_buy,
-                                         elder_ray_sell]
+                                         elder_ray_sell, rri, rri_buy]
     dataframe = pd.DataFrame(dataframe_dict.values(), index=dataframe_dict.keys(),
                              columns=['action', 'Granularity', 'Buy score', 'Datetime', 'Price', 'Fast EMA gt', 'EMA CO',
                                       'Golden Cross', 'Macdgtsignal', 'Macdgtsignalco', 'Obv', 'Obv_pc',
-                                      'Elder_ray_buy', 'elder_ray_sell'])
+                                      'Elder_ray_buy', 'elder_ray_sell', 'rri', 'rri_buy'])
     dataframe = dataframe.sort_values(by='Buy score', ascending=False)
     buy_dataframe = dataframe[dataframe.action == 'BUY']
     print("buy_dataframe.index", buy_dataframe.index)

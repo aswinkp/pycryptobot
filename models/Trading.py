@@ -993,5 +993,3 @@ class TechnicalAnalysis():
         self.df['last_5_rri_buy'] = (self.df['last_3_rri_buy'] | self.df['rri_buy'].shift(3) |  self.df['rri_buy'].shift(4))
         self.df['last_3_rri_sell'] = (self.df['rri_sell'] | self.df['rri_sell'].shift(1) | self.df['rri_sell'].shift(2))
         self.df['last_5_rri_sell'] = (self.df['last_3_rri_sell'] | self.df['rri_sell'].shift(3) | self.df['rri_sell'].shift(4))
-        # self.df['last_3_rri'] = 0
-        # self.df['last_5_rri'] = 0
