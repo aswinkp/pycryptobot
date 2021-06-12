@@ -389,7 +389,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
 
             # loss failsafe sell at trailing_stop_loss
             if app.trailingStopLoss() != None and change_pcnt_high < app.trailingStopLoss() and (
-                    app.allowSellAtLoss() or margin > 0):
+                    margin > 0):
                 state.action = 'SELL'
                 state.last_action = 'BUY'
                 immediate_action = True
@@ -448,7 +448,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                     app.notifyTelegram(app.getMarket() + ' (' + app.printGranularity() + ') ' + log_text)
 
             # if greater than 3 hours, sell if margin greater than 0.05
-            if (datetime.now()-state.last_buy_time).seconds > 3600 and margin >= 0.05:
+            if (datetime.now()-state.last_buy_time).seconds > 900 and margin >= 0.05:
                 state.action = "SELL"
                 state.last_action = 'BUY'
                 immediate_action = True
@@ -931,7 +931,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 # show profit and margin if already bought
                 Logger.info(now + ' | ' + app.getMarket() + bullbeartext + ' | ' + app.printGranularity() + ' | Current Price: ' + str(price) + ' | Margin:' + str(margin) + ' | Profit:' + str(profit))
             else:
-                if execute_count >= 5:
+                if execute_count >= 3:
                     detect_buyable_coins(quote_currency=app.quote_currency)
                 Logger.info(now + ' | ' + app.getMarket() + bullbeartext + ' | ' + app.printGranularity() + ' | Current Price: ' + str(price))
 
@@ -1131,9 +1131,9 @@ def detect_buyable_coins(quote_currency = "BNB"):
             if elder_ray_buy: buy_score += 2
             if not elder_ray_sell: buy_score += 2
             if rri_buy and (ema12gtema26 or ema12gtema26co) and (ema12gtema26co or macdgtsignalco):
-                buy_score += 10
+                buy_score += 14
             elif rri_buy and (ema12gtema26 and macdgtsignal):
-                buy_score += 8
+                buy_score += 9
             elif rri_buy and (ema12gtema26 or macdgtsignal):
                 buy_score += 6
             elif rri_buy:

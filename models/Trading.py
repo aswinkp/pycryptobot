@@ -515,6 +515,8 @@ class TechnicalAnalysis():
 
         self.df['rsi' + str(period)] = self.relativeStrengthIndex(period)   
         self.df['rsi' + str(period)] = self.df['rsi' + str(period)].replace(nan, 50)
+        self.df['rsi_last'] = self.df['rsi' + str(period)].shift(1)
+        self.df['rsi_prev'] = self.df['rsi' + str(period)].shift(2)
 
     def addStochasticRSI(self, period: int) -> None:
         """Adds the Stochastic Relative Strength Index (RSI) to the DataFrame"""
