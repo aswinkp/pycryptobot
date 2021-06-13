@@ -1106,6 +1106,7 @@ def detect_buyable_coins(quote_currency = "BNB"):
             last_5_rri_sell = df_last['last_5_rri_sell'].values[0]
             rri_buy = df_last['rri_buy'].values[0]
             rri_sell = df_last['rri_sell'].values[0]
+            rsi = df_last['rsi14'].values[0]
 
             state.action = getAction(now, app, price, df, df_last, state.last_action)
 
@@ -1126,6 +1127,10 @@ def detect_buyable_coins(quote_currency = "BNB"):
                 buy_score += 6
             elif rri_buy:
                 buy_score += 4
+            if rsi<30:
+                buy_score +=8
+            elif rsi<20:
+                buy_score +=12
 
             dataframe_dict[coin_pair] = [state.action, app.getGranularity(), buy_score, datetime.now(), price, ema12gtema26, ema12gtema26co,
                                          goldencross, macdgtsignal, macdgtsignalco, obv, obv_pc, elder_ray_buy,
