@@ -394,8 +394,10 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 if not (not app.allowSellAtLoss() and margin <= 0):
                     app.notifyTelegram(app.getMarket() + ' (' + app.printGranularity() + ') ' + log_text)
 
-            # if greater than 3 hours, sell if margin greater than 0.05
-            if (datetime.now()-state.last_buy_time).seconds > 900 and margin >= 0.05:
+            # if greater than 2 hours, sell if margin greater than 0.05, greater than 5 hours, sell > -2%
+            if ((datetime.now()-state.last_buy_time).seconds > 3600*2 and margin >= 0.05) or (
+                ((datetime.now() - state.last_buy_time).seconds > 3600*5 and margin >= -2)
+            ):
                 state.action = "SELL"
                 state.last_action = 'BUY'
                 immediate_action = True
@@ -1034,15 +1036,15 @@ def detect_buyable_coins(quote_currency = "BNB"):
             trading_data = app.getHistoricalData(coin_pair, app.getGranularity())
             # analyse the market data
             trading_dataCopy = trading_data.copy()
-            ta = TechnicalAnalysis(trading_dataCopy)
+            technical_analysis = TechnicalAnalysis(trading_dataCopy)
             if not (len(trading_data) > 0):
                 continue
-            ta.addAll()
+            technical_analysis.addAll()
         except Exception as e:
             # some coin pairs will throw an exception. so skip them
             print(e)
             continue
-        df = ta.getDataFrame()
+        df = technical_analysis.getDataFrame()
 
         df_last = getInterval(df, app)
 
@@ -1054,20 +1056,10 @@ def detect_buyable_coins(quote_currency = "BNB"):
         if app.getExchange() == 'binance' and app.getGranularity() == 86400:
             if len(df) < 250:
                 continue
-                # data frame should have 250 rows, if not retry
-                print('error: data frame length is < 250 (' + str(len(df)) + ')')
-                logging.error('error: data frame length is < 250 (' + str(len(df)) + ')')
-                list(map(s.cancel, s.queue))
-                s.enter(300, 1, executeJob, (sc, app, state))
         else:
             if len(df) < 300:
                 if not app.isSimulation():
                     continue
-                    # data frame should have 300 rows, if not retry
-                    print('error: data frame length is < 300 (' + str(len(df)) + ')')
-                    logging.error('error: data frame length is < 300 (' + str(len(df)) + ')')
-                    list(map(s.cancel, s.queue))
-                    s.enter(300, 1, executeJob, (sc, app, state))
 
         if len(df_last) > 0:
             now = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
@@ -1083,7 +1075,13 @@ def detect_buyable_coins(quote_currency = "BNB"):
 
             if price < 0.0001:
                 continue
-                raise Exception(app.getMarket() + ' is unsuitable for trading, quote price is less than 0.0001!')
+
+
+
+            state.action = getAction(now, app, price, df, df_last, state.last_action)
+
+            if state.action != "BUY":
+                continue
 
             # technical indicators
             ema12gtema26 = bool(df_last['ema12gtema26'].values[0])
@@ -1107,8 +1105,23 @@ def detect_buyable_coins(quote_currency = "BNB"):
             rri_buy = df_last['rri_buy'].values[0]
             rri_sell = df_last['rri_sell'].values[0]
             rsi = df_last['rsi14'].values[0]
+            rsi_last = df_last['rsi_last'].values[0]
+            rsi_prev = df_last['rsi_prev'].values[0]
+            stochrsi14 = float(df_last['stochrsi14'].values[0])
+            williamsr14 = float(df_last['williamsr14'].values[0])
 
-            state.action = getAction(now, app, price, df, df_last, state.last_action)
+            prediction_minutes = int(app.getGranularity() / 60) * 3
+            if (prediction_minutes < len(df)):
+                sarima = technical_analysis.customSARIMAPrediction(prediction_minutes,
+                                                                   df)
+                sarima_3 = sarima[1]
+                sarima_3_margin = ((sarima_3 / price) - 1) * 100
+                sarima_3_dt = sarima[0]
+
+                if sarima_3_margin<3:
+                    continue
+            else:
+                continue
 
             buy_score = 0
             if ema12gtema26: buy_score += 3
@@ -1132,25 +1145,57 @@ def detect_buyable_coins(quote_currency = "BNB"):
             elif rsi<20:
                 buy_score +=12
 
-            dataframe_dict[coin_pair] = [state.action, app.getGranularity(), buy_score, datetime.now(), price, ema12gtema26, ema12gtema26co,
-                                         goldencross, macdgtsignal, macdgtsignalco, obv, obv_pc, elder_ray_buy,
-                                         elder_ray_sell, rri, rri_buy]
-    dataframe = pd.DataFrame(dataframe_dict.values(), index=dataframe_dict.keys(),
-                             columns=['action', 'Granularity', 'Buy score', 'Datetime', 'Price', 'Fast EMA gt', 'EMA CO',
-                                      'Golden Cross', 'Macdgtsignal', 'Macdgtsignalco', 'Obv', 'Obv_pc',
-                                      'Elder_ray_buy', 'elder_ray_sell', 'rri', 'rri_buy'])
-    dataframe = dataframe.sort_values(by='Buy score', ascending=False)
-    buy_dataframe = dataframe[dataframe.action == 'BUY']
-    print("buy_dataframe.index", buy_dataframe.index)
-    if len(buy_dataframe.index) > 0:
-        buy_dataframe.to_csv('buy_dataframe_tracker.csv', mode='a', header=False)
-        coin_pair = buy_dataframe.index[0]
-        from models.config import binanceParseMarket
-        app.market, app.base_currency, app.quote_currency = binanceParseMarket(coin_pair)
-        execute_count = 0
-        print("Sending buy signal for", coin_pair)
-        executeJob(s, app, state)
-        s.run()
+            dataframe_dict[coin_pair] = {
+                                       "coin_pair": coin_pair,
+                                       "timestamp": df_last['date'][0].isoformat(),
+                                       "buy_score": buy_score,
+                                       "granularity": app.getGranularity(),
+                                       "price": price,
+                                       "ema12gtema26": ema12gtema26,
+                                       "ema12gtema26co": ema12gtema26co,
+                                       "goldencross": goldencross,
+                                       "macdgtsignal": macdgtsignal,
+                                       "macdgtsignalco": macdgtsignalco,
+                                       "obv": obv,
+                                       "obv_pc": obv_pc,
+                                       "elder_ray_buy": elder_ray_buy,
+                                       "elder_ray_sell": elder_ray_sell,
+                                       "rri": rri,
+                                       "rri_buy": rri_buy,
+                                       "rri_sell": rri_sell,
+                                       "last_3_rri_buy": last_3_rri_buy,
+                                       "last_5_rri_buy": last_5_rri_buy,
+                                       "last_3_rri_sell": last_3_rri_sell,
+                                       "last_5_rri_sell": last_5_rri_sell,
+                                       "rsi": rsi,
+                                       "rsi_last": rsi_last,
+                                       "rsi_prev": rsi_prev,
+                                       "stochrsi14": stochrsi14,
+                                       "williamsr14": williamsr14,
+                                       "sarima_3": sarima_3,
+                                       "sarima_3_margin": sarima_3_margin,
+                                       "sarima_3_dt": sarima_3_dt,
+                                      }
+    if dataframe_dict and len(dataframe_dict):
+        column_names = list(dataframe_dict.values())[0].keys()
+        dataframe = pd.DataFrame(dataframe_dict.values())
+        buy_dataframe = dataframe
+        if len(buy_dataframe.index) > 0:
+            buy_dataframe = buy_dataframe.sort_values(['sarima_3_margin', 'buy_score'], ascending=[False, False])
+            print("buy_dataframe.coin_pair", buy_dataframe['coin_pair'].values)
+            buy_dataframe.to_csv('buy_dataframe_tracker.csv', mode='a', index=False, header=False)
+            coin_pair = buy_dataframe['coin_pair'].values[0]
+            from models.config import binanceParseMarket
+            app.market, app.base_currency, app.quote_currency = binanceParseMarket(coin_pair)
+            execute_count = 0
+            print("Sending buy signal for", coin_pair)
+            executeJob(s, app, state)
+            s.run()
+        else:
+            # wait for 10 min and execute again. if not get the index of biggest score
+            print("None of the coin pairs get buy signals atm. Waiting for 15 minutes")
+            sleep(900)
+            detect_buyable_coins(quote_currency=quote_currency)
     else:
         # wait for 10 min and execute again. if not get the index of biggest score
         print("None of the coin pairs get buy signals atm. Waiting for 15 minutes")
