@@ -1,5 +1,5 @@
 """Python Crypto Bot consuming Coinbase Pro or Binance APIs"""
-
+import argparse
 import functools
 import os
 import sched
@@ -16,6 +16,7 @@ from models.helper.csv_writer import write_dict_to_csv
 from views.TradingGraphs import TradingGraphs
 from models.helper.LogHelper import Logger
 from time import sleep
+from manage_running import Running
 
 # minimal traceback
 sys.tracebacklimit = 1
@@ -25,10 +26,15 @@ account = TradingAccount(app)
 technical_analysis = None
 state = AppState(app, account)
 state.initLastAction()
-
-s = sched.scheduler(time.time, time.sleep)
-
 execute_count = 0
+s = sched.scheduler(time.time, time.sleep)
+parser = argparse.ArgumentParser()
+
+parser.add_argument("quote", type=str)
+args, unknown = parser.parse_known_args()
+
+RUNING = Running(name= vars(args)['quote'])
+
 
 def getAction(now: datetime = datetime.today().strftime('%Y-%m-%d %H:%M:%S'), app: PyCryptoBot = None, price: float = 0,
               df: pd.DataFrame = pd.DataFrame(), df_last: pd.DataFrame = pd.DataFrame(), last_action: str = 'WAIT') -> str:
@@ -153,6 +159,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
 
     global execute_count
     execute_count += 1
+    print("Running executejob  for market", )
     # connectivity check (only when running live)
     if app.isLive() and app.getTime() is None:
         Logger.warning('Your connection to the exchange has gone down, will retry in 1 minute!')
@@ -201,6 +208,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
         app.setGranularity(900)
         list(map(s.cancel, s.queue))
         s.enter(5, 1, executeJob, (sc, app, state))
+        return
 
     if app.getSmartSwitch() == 1 and app.getGranularity() == 900 and app.is1hEMA1226Bull() is False and app.is6hEMA1226Bull() is False:
         Logger.info("*** smart switch from granularity 900 (15 min) to 3600 (1 hour) ***")
@@ -210,6 +218,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
         app.setGranularity(3600)
         list(map(s.cancel, s.queue))
         s.enter(5, 1, executeJob, (sc, app, state))
+        return
 
     if app.getExchange() == 'binance' and app.getGranularity() == 86400:
         if len(df) < 250:
@@ -217,6 +226,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
             Logger.error('error: data frame length is < 250 (' + str(len(df)) + ')')
             list(map(s.cancel, s.queue))
             s.enter(300, 1, executeJob, (sc, app, state))
+            return
     else:
         if len(df) < 300:
             if not app.isSimulation():
@@ -224,6 +234,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 Logger.error('error: data frame length is < 300 (' + str(len(df)) + ')')
                 list(map(s.cancel, s.queue))
                 s.enter(300, 1, executeJob, (sc, app, state))
+                return
 
     if len(df_last) > 0:
         now = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
@@ -922,7 +933,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 Logger.info(now + ' | ' + app.getMarket() + bullbeartext + ' | ' + app.printGranularity() + ' | Current Price: ' + str(price) + ' | Margin:' + str(margin) + ' | Profit:' + str(profit))
             else:
                 if execute_count >= 3:
-                    detect_buyable_coins(quote_currency=app.quote_currency)
+                    return
                 Logger.info(now + ' | ' + app.getMarket() + bullbeartext + ' | ' + app.printGranularity() + ' | Current Price: ' + str(price))
 
             # decrement ignored iteration
@@ -938,17 +949,30 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
 
         if not app.isSimulation():
             if state.action == "SELL" and state.last_action == "SELL":
-                detect_buyable_coins(quote_currency=app.quote_currency)
+                # sold the coins, return and restart from detect_buyable_coins
+                RUNING.set_current_market_for_name(None)
+                return
             else:
                 # poll every 2 minutes
                 list(map(s.cancel, s.queue))
                 s.enter(120, 1, executeJob, (sc, app, state))
+                return
 
 
 
-def detect_buyable_coins(quote_currency = "BNB"):
-    print("Detecting buyable coins")
+def detect_buyable_coins():
+    quote_currency = RUNING.get_quote()
+    print("quote currency", quote_currency)
     global execute_count
+    print("Detecting buyable coins")
+    if RUNING.get_current_market():
+        from models.config import binanceParseMarket
+        app.market, app.base_currency, app.quote_currency = binanceParseMarket(RUNING.get_current_market())
+        execute_count = 0
+        print("Sending buy signal for", RUNING.get_current_market())
+        executeJob(s, app, state)
+        s.run()
+        return
     binance_coin_pairs = ['WTCBNB', 'BATBNB', 'NEOBNB', 'IOTABNB', 'XLMBNB', 'WABIBNB', 'LTCBNB', 'WAVESBNB', 'ICXBNB',
                           'BLZBNB', 'ZILBNB', 'ONTBNB', 'WANBNB', 'ADABNB', 'ZENBNB', 'EOSBNB', 'THETABNB', 'XRPBNB',
                           'ENJBNB', 'TRXBNB', 'ETCBNB', 'SCBNB', 'MFTBNB', 'VETBNB', 'RVNBNB', 'MITHBNB', 'BTTBNB',
@@ -1115,7 +1139,8 @@ def detect_buyable_coins(quote_currency = "BNB"):
                 sarima = technical_analysis.customSARIMAPrediction(prediction_minutes,
                                                                    df)
                 sarima_3 = sarima[1]
-                sarima_3_margin = ((sarima_3 / price) - 1) * 100
+                sarima_3_margin_unrounded = ((sarima_3 / price) - 1) * 100
+                sarima_3_margin = round(sarima_3_margin_unrounded*2)/2
                 sarima_3_dt = sarima[0]
 
                 if sarima_3_margin<3:
@@ -1188,21 +1213,21 @@ def detect_buyable_coins(quote_currency = "BNB"):
             from models.config import binanceParseMarket
             app.market, app.base_currency, app.quote_currency = binanceParseMarket(coin_pair)
             execute_count = 0
+            RUNING.set_current_market_for_name(coin_pair)
             print("Sending buy signal for", coin_pair)
             executeJob(s, app, state)
             s.run()
+            return
         else:
             # wait for 10 min and execute again. if not get the index of biggest score
             print("None of the coin pairs get buy signals atm. Waiting for 15 minutes")
             sleep(900)
-            detect_buyable_coins(quote_currency=quote_currency)
+            return
     else:
         # wait for 10 min and execute again. if not get the index of biggest score
         print("None of the coin pairs get buy signals atm. Waiting for 15 minutes")
         sleep(900)
-        detect_buyable_coins(quote_currency=quote_currency)
-
-import argparse
+        return
 
 
 def main():
@@ -1210,11 +1235,8 @@ def main():
 
         def runApp():
             # run the first job immediately after starting
-            parser = argparse.ArgumentParser()
-
-            parser.add_argument("quote", type=str)
-            args, unknown = parser.parse_known_args()
-            detect_buyable_coins(quote_currency = vars(args)['quote'])
+            while True:
+                detect_buyable_coins()
 
 
 
