@@ -336,7 +336,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
 
             # loss failsafe sell at trailing_stop_loss
             if app.trailingStopLoss() != None and change_pcnt_high < app.trailingStopLoss() and (
-                    margin > 0):
+                    margin > 0.5):
                 state.action = 'SELL'
                 state.last_action = 'BUY'
                 immediate_action = True
@@ -1255,3 +1255,15 @@ def main():
 
 
 main()
+
+
+# TODO: 1: rounding off sarima3 - 30 mins
+# TODO 2: Storing current cryptos in a json file. Run with execute count if script failed - 2 hrs
+# TODO 3: Force buy the coins, (Log force buys separately - with additional column) - 1 hr
+# TODO 4: Return functions to avoid stagnating memory - 2 hrs
+# TODO 5: Add score to RSI
+
+
+# Todo Idea: Keep calculating the Sarima while receiving via websockets.
+# Todo Idea: While the sarima for current trade seems to go negative and any other sarima is positive from websockets, sell this at current price and buy the next most profitable one
+# Todo Idea: Check profit percent of RSI only buys, Williams%, Schotiachic
