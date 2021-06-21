@@ -30,10 +30,9 @@ execute_count = 0
 s = sched.scheduler(time.time, time.sleep)
 parser = argparse.ArgumentParser()
 
-parser.add_argument("quote", type=str)
+parser.add_argument("name", type=str)
 args, unknown = parser.parse_known_args()
-
-RUNING = Running(name= vars(args)['quote'])
+RUNING = Running(name= vars(args)['name'])
 
 
 def getAction(now: datetime = datetime.today().strftime('%Y-%m-%d %H:%M:%S'), app: PyCryptoBot = None, price: float = 0,
