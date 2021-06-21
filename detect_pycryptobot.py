@@ -152,14 +152,13 @@ def getInterval(df: pd.DataFrame = pd.DataFrame(), app: PyCryptoBot = None, iter
         # most recent entry
         return df.tail(1)
 
-def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading_data=pd.DataFrame()):
+def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading_data=pd.DataFrame(), force_buy=False):
     """Trading bot job which runs at a scheduled interval"""
 
     global technical_analysis
 
     global execute_count
     execute_count += 1
-    print("Running executejob  for market", )
     # connectivity check (only when running live)
     if app.isLive() and app.getTime() is None:
         Logger.warning('Your connection to the exchange has gone down, will retry in 1 minute!')
@@ -293,6 +292,9 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
         two_black_gapping = bool(df_last['two_black_gapping'].values[0])
 
         state.action = getAction(now, app, price, df, df_last, state.last_action)
+        if state.action != 'BUY' and force_buy==True:
+            # TODO: Log force buys here
+            state.action = "BUY"
 
         immediate_action = False
         margin, profit, sell_fee = 0, 0, 0
@@ -406,9 +408,11 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                     app.notifyTelegram(app.getMarket() + ' (' + app.printGranularity() + ') ' + log_text)
 
             # if greater than 2 hours, sell if margin greater than 0.05, greater than 5 hours, sell > -2%
+            # or sell if margin less than -6
             if ((datetime.now()-state.last_buy_time).seconds > 3600*2 and margin >= 0.05) or (
-                ((datetime.now() - state.last_buy_time).seconds > 3600*5 and margin >= -2)
-            ):
+                (datetime.now() - state.last_buy_time).seconds > 3600*5 and margin >= -2) or (
+                margin <= -6
+            ) :
                 state.action = "SELL"
                 state.last_action = 'BUY'
                 immediate_action = True
@@ -969,7 +973,7 @@ def detect_buyable_coins():
         from models.config import binanceParseMarket
         app.market, app.base_currency, app.quote_currency = binanceParseMarket(RUNING.get_current_market())
         execute_count = 0
-        print("Sending buy signal for", RUNING.get_current_market())
+        print("Sending existing buy signal for", RUNING.get_current_market())
         executeJob(s, app, state)
         s.run()
         return
@@ -1215,7 +1219,7 @@ def detect_buyable_coins():
             execute_count = 0
             RUNING.set_current_market_for_name(coin_pair)
             print("Sending buy signal for", coin_pair)
-            executeJob(s, app, state)
+            executeJob(s, app, state, force_buy=True)
             s.run()
             return
         else:
@@ -1277,14 +1281,6 @@ def main():
 
 
 main()
-
-
-# TODO: 1: rounding off sarima3 - 30 mins
-# TODO 2: Storing current cryptos in a json file. Run with execute count if script failed - 2 hrs
-# TODO 3: Force buy the coins, (Log force buys separately - with additional column) - 1 hr
-# TODO 4: Return functions to avoid stagnating memory - 2 hrs
-# TODO 5: Add score to RSI
-
 
 # Todo Idea: Keep calculating the Sarima while receiving via websockets.
 # Todo Idea: While the sarima for current trade seems to go negative and any other sarima is positive from websockets, sell this at current price and buy the next most profitable one
