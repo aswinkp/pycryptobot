@@ -263,13 +263,6 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
         obv_pc = float(df_last['obv_pc'].values[0])
         elder_ray_buy = bool(df_last['eri_buy'].values[0])
         elder_ray_sell = bool(df_last['eri_sell'].values[0])
-        rri = df_last['rri'].values[0]
-        last_3_rri_buy = df_last['last_3_rri_buy'].values[0]
-        last_5_rri_buy = df_last['last_5_rri_buy'].values[0]
-        last_3_rri_sell = df_last['last_3_rri_sell'].values[0]
-        last_5_rri_sell = df_last['last_5_rri_sell'].values[0]
-        rri_buy = df_last['rri_buy'].values[0]
-        rri_sell = df_last['rri_sell'].values[0]
 
         # if simulation interations < 200 set goldencross to true
         if app.isSimulation() and state.iterations < 200:
@@ -302,6 +295,8 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
             # update last buy high
             if price > state.last_buy_high:
                 state.last_buy_high = price
+            if price < state.last_buy_low:
+                state.last_buy_low = price
 
             if state.last_buy_high > 0:
                 change_pcnt_high = ((price / state.last_buy_high) - 1) * 100
@@ -408,9 +403,9 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
 
             # if greater than 2 hours, sell if margin greater than 0.05, greater than 5 hours, sell > -2%
             # or sell if margin less than -6
-            if ((datetime.now()-state.last_buy_time).seconds > 3600*2 and margin >= 0.05) or (
+            if ((datetime.now()-state.last_buy_time).seconds > 3600*2 and margin >= 0.2) or (
                 (datetime.now() - state.last_buy_time).seconds > 3600*5 and margin >= -2) or (
-                margin <= -6
+                margin <= -10
             ) :
                 state.action = "SELL"
                 state.last_action = 'BUY'
@@ -598,7 +593,8 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 if not app.isSimulation():
                     try:
                         prediction = technical_analysis.seasonalARIMAModelPrediction(int(app.getGranularity() / 60) * 3) # 3 intervals from now
-                        Logger.info(f'Seasonal ARIMA machine learning model predicts the closing price will be {str(prediction[1])} at {prediction[0]}')
+                        sarima_3_margin = round(((prediction[1] / price) - 1) * 100, 2)
+                        Logger.info(f'Seasonal ARIMA machine learning model predicts the closing price will be {str(sarima_3_margin)} at {prediction[0]}')
                     except:
                         pass
 
@@ -875,15 +871,16 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                         Logger.info('--------------------------------------------------------------------------------')
                         Logger.info('|                      *** Executing TEST Sell Order ***                        |')
                         Logger.info('--------------------------------------------------------------------------------')
-                write_dict_to_csv('sales_tracker.csv', {
+                write_dict_to_csv('csvs/sales_tracker.csv', {
                     "market": app.getMarket(),
                     "buy_time": state.last_buy_time,
                     "buy_price": state.last_buy_price,
-                    "last_buy_high_margin": ((state.last_buy_high / state.last_buy_price) - 1) * 100,
+                    "max_high_pcnt": ((state.last_buy_high / state.last_buy_price) - 1) * 100,
+                    "max_low_pcnt": ((state.last_buy_low / state.last_buy_price) - 1) * 100,
                     "sell_time": datetime.now(),
                     "sell_price": price,
                     "margin": margin,
-                    "time_difference": divmod(divmod((datetime.now() - state.last_buy_time).seconds, 60)[0], 60)
+                    "time_held": divmod(divmod((datetime.now() - state.last_buy_time).seconds, 60)[0], 60)
                 })
                 if app.shouldSaveGraphs():
                     tradinggraphs = TradingGraphs(technical_analysis)
@@ -1211,7 +1208,7 @@ def detect_buyable_coins():
         if len(buy_dataframe.index) > 0:
             buy_dataframe = buy_dataframe.sort_values(['sarima_3_margin', 'buy_score'], ascending=[False, False])
             print("buy_dataframe.coin_pair", buy_dataframe['coin_pair'].values)
-            buy_dataframe.to_csv('buy_dataframe_tracker.csv', mode='a', index=False, header=False)
+            buy_dataframe.to_csv('csvs/buy_dataframe_tracker.csv', mode='a', index=False, header=False)
             coin_pair = buy_dataframe['coin_pair'].values[0]
             from models.config import binanceParseMarket
             app.market, app.base_currency, app.quote_currency = binanceParseMarket(coin_pair)
