@@ -284,9 +284,13 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
         two_black_gapping = bool(df_last['two_black_gapping'].values[0])
 
         state.action = getAction(now, app, price, df, df_last, state.last_action)
-        if state.action != 'BUY' and force_buy==True:
+        if state.action != 'BUY' and force_buy is True:
             # TODO: Log force buys here
-            state.action = "BUY"
+            print("Setting buy signal forcefully")
+            state.action = 'BUY'
+        else:
+            if force_buy is True:
+                print("Did not set force buy signal", state.action, force_buy)
 
         immediate_action = False
         margin, profit, sell_fee = 0, 0, 0
@@ -728,6 +732,8 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                         state.last_buy_size = app.getBuyMaxSize()
 
                     resp = app.marketBuy(app.getMarket(), state.last_buy_size, app.getBuyPercent())
+                    print(resp)
+                    RUNING.set_current_market_for_name(app.getMarket())
                     Logger.debug(resp)
 
                     # display balances
@@ -1113,10 +1119,6 @@ def detect_buyable_coins():
             goldencross = bool(df_last['goldencross'].values[0])
             macdgtsignal = bool(df_last['macdgtsignal'].values[0])
             macdgtsignalco = bool(df_last['macdgtsignalco'].values[0])
-            ema12ltema26 = bool(df_last['ema12ltema26'].values[0])
-            ema12ltema26co = bool(df_last['ema12ltema26co'].values[0])
-            macdltsignal = bool(df_last['macdltsignal'].values[0])
-            macdltsignalco = bool(df_last['macdltsignalco'].values[0])
             obv = float(df_last['obv'].values[0])
             obv_pc = float(df_last['obv_pc'].values[0])
             elder_ray_buy = bool(df_last['eri_buy'].values[0])
@@ -1213,7 +1215,6 @@ def detect_buyable_coins():
             from models.config import binanceParseMarket
             app.market, app.base_currency, app.quote_currency = binanceParseMarket(coin_pair)
             execute_count = 0
-            RUNING.set_current_market_for_name(coin_pair)
             print("Sending buy signal for", coin_pair)
             executeJob(s, app, state, force_buy=True)
             s.run()
