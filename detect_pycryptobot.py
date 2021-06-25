@@ -407,7 +407,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
 
             # if greater than 2 hours, sell if margin greater than 0.05, greater than 5 hours, sell > -2%
             # or sell if margin less than -6
-            if ((datetime.now()-state.last_buy_time).seconds > 3600*2 and margin >= 0.2) or (
+            if ((datetime.now()-state.last_buy_time).seconds > 3600*1 and margin >= 0.2) or (
                 (datetime.now() - state.last_buy_time).seconds > 3600*5 and margin >= -2) or (
                 margin <= -10
             ) :
@@ -881,11 +881,11 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                     "market": app.getMarket(),
                     "buy_time": state.last_buy_time,
                     "buy_price": state.last_buy_price,
-                    "max_high_pcnt": ((state.last_buy_high / state.last_buy_price) - 1) * 100,
-                    "max_low_pcnt": ((state.last_buy_low / state.last_buy_price) - 1) * 100,
+                    "max_high_pcnt": round(((state.last_buy_high / state.last_buy_price) - 1) * 100, 2),
+                    "max_low_pcnt": round(((state.last_buy_low / state.last_buy_price) - 1) * 100, 2),
                     "sell_time": datetime.now(),
                     "sell_price": price,
-                    "margin": margin,
+                    "margin": round(margin, 3),
                     "time_held": divmod(divmod((datetime.now() - state.last_buy_time).seconds, 60)[0], 60)
                 })
                 if app.shouldSaveGraphs():
