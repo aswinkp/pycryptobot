@@ -25,7 +25,6 @@ app = PyCryptoBot()
 account = TradingAccount(app)
 technical_analysis = None
 state = AppState(app, account)
-state.initLastAction()
 execute_count = 0
 s = sched.scheduler(time.time, time.sleep)
 parser = argparse.ArgumentParser()
@@ -153,7 +152,7 @@ def getInterval(df: pd.DataFrame = pd.DataFrame(), app: PyCryptoBot = None, iter
 
 def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading_data=pd.DataFrame(), force_buy=False):
     """Trading bot job which runs at a scheduled interval"""
-
+    sys.exit()
     global technical_analysis
 
     global execute_count
@@ -946,14 +945,14 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 try:
                     prediction_3 = technical_analysis.seasonalARIMAModelPrediction(
                         int(app.getGranularity() / 60) * 3)  # 3 intervals from now
-                    sarima_3_margin = round(((prediction_3[1] / price) - 1) * 100, 2)
+                    sarima_3_margin = round(((prediction_3[1] / state.last_buy_price) - 1) * 100, 2)
                     prediction_1 = technical_analysis.seasonalARIMAModelPrediction(
                         int(app.getGranularity() / 60))  # 1 intervals from now
-                    sarima_1_margin = round(((prediction_1[1] / price) - 1) * 100, 2)
+                    sarima_1_margin = round(((prediction_1[1] / state.last_buy_price) - 1) * 100, 2)
                 except:
                     sarima_3_margin= None
                     sarima_1_margin = None
-                RUNING.update_current_market(current_margin=margin,
+                RUNING.update_current_market(current_margin=round(margin, 2),
                                              buy_price=state.last_buy_price,
                                              current_price=price,
                                              last_buy_high=round(((state.last_buy_high / state.last_buy_price) - 1) * 100, 2),
@@ -997,6 +996,7 @@ def detect_buyable_coins():
     print("Detecting buyable coins")
     if RUNING.get_current_market():
         app.market, app.base_currency, app.quote_currency = binanceParseMarket(RUNING.get_current_market())
+        state.initLastAction()
         execute_count = 0
         print("Sending existing buy signal for", RUNING.get_current_market())
         executeJob(s, app, state)
@@ -1242,6 +1242,7 @@ def detect_buyable_coins():
             buy_dataframe.to_csv('csvs/buy_dataframe_tracker.csv', mode='a', index=False, header=False)
             coin_pair = buy_dataframe['coin_pair'].values[0]
             app.market, app.base_currency, app.quote_currency = binanceParseMarket(coin_pair)
+            state.initLastAction()
             execute_count = 0
             print("Sending buy signal for", coin_pair)
             executeJob(s, app, state, force_buy=True)
