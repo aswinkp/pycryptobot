@@ -152,7 +152,7 @@ def getInterval(df: pd.DataFrame = pd.DataFrame(), app: PyCryptoBot = None, iter
 
 def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading_data=pd.DataFrame(), force_buy=False):
     """Trading bot job which runs at a scheduled interval"""
-    sys.exit()
+
     global technical_analysis
 
     global execute_count
