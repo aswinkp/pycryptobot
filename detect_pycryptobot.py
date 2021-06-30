@@ -283,16 +283,15 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
         evening_doji_star = bool(df_last['evening_doji_star'].values[0])
         two_black_gapping = bool(df_last['two_black_gapping'].values[0])
 
+        immediate_action = False
         state.action = getAction(now, app, price, df, df_last, state.last_action)
         if state.action != 'BUY' and force_buy is True:
             # TODO: Log force buys here
             print("Setting buy signal forcefully")
             state.action = 'BUY'
-        else:
-            if force_buy is True:
-                print("Did not set force buy signal", state.action, force_buy)
+            immediate_action = True
 
-        immediate_action = False
+
         margin, profit, sell_fee = 0, 0, 0
 
         if state.last_buy_size > 0 and state.last_buy_price > 0 and price > 0 and state.last_action == 'BUY':
@@ -415,6 +414,13 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 state.last_action = 'BUY'
                 immediate_action = True
                 log_text = '! Waste of time. No significant price change in past hour'
+                Logger.warning(log_text)
+
+            if RUNING.should_sell_current():
+                state.action = "SELL"
+                state.last_action = 'BUY'
+                immediate_action = True
+                log_text = '! Sell signal from web app'
                 Logger.warning(log_text)
 
         bullbeartext = ''
@@ -732,7 +738,6 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                         state.last_buy_size = app.getBuyMaxSize()
 
                     resp = app.marketBuy(app.getMarket(), state.last_buy_size, app.getBuyPercent())
-                    print(resp)
                     RUNING.set_current_market_for_name(app.getMarket())
                     Logger.debug(resp)
 
@@ -742,6 +747,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                 # if not live
                 else:
                     app.notifyTelegram(app.getMarket() + ' (' + app.printGranularity() + ') TEST BUY at ' + price_text)
+                    RUNING.set_current_market_for_name(app.getMarket())
                     # TODO: Improve simulator calculations by including calculations for buy and sell limit configurations.
                     if state.last_buy_size == 0 and state.last_buy_filled == 0:
                         state.last_buy_size = 1000
@@ -937,6 +943,24 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
             if state.last_buy_size > 0 and state.last_buy_price > 0 and price > 0 and state.last_action == 'BUY':
                 # show profit and margin if already bought
                 Logger.info(now + ' | ' + app.getMarket() + bullbeartext + ' | ' + app.printGranularity() + ' | Current Price: ' + str(price) + ' | Margin:' + str(margin) + ' | Profit:' + str(profit))
+                try:
+                    prediction_3 = technical_analysis.seasonalARIMAModelPrediction(
+                        int(app.getGranularity() / 60) * 3)  # 3 intervals from now
+                    sarima_3_margin = round(((prediction_3[1] / price) - 1) * 100, 2)
+                    prediction_1 = technical_analysis.seasonalARIMAModelPrediction(
+                        int(app.getGranularity() / 60))  # 1 intervals from now
+                    sarima_1_margin = round(((prediction_1[1] / price) - 1) * 100, 2)
+                except:
+                    sarima_3_margin= None
+                    sarima_1_margin = None
+                RUNING.update_current_market(current_margin=margin,
+                                             buy_price=state.last_buy_price,
+                                             current_price=price,
+                                             last_buy_high=round(((state.last_buy_high / state.last_buy_price) - 1) * 100, 2),
+                                             last_buy_low=round(((state.last_buy_low / state.last_buy_price) - 1) * 100, 2),
+                                             sarima_3_margin=sarima_3_margin,
+                                             sarima_1_margin=sarima_1_margin,
+                                             )
             else:
                 if execute_count >= 3:
                     return
@@ -956,7 +980,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
         if not app.isSimulation():
             if state.action == "SELL" and state.last_action == "SELL":
                 # sold the coins, return and restart from detect_buyable_coins
-                RUNING.set_current_market_for_name(None)
+                RUNING.remove_current_market_for_name()
                 return
             else:
                 # poll every 2 minutes
@@ -967,12 +991,11 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
 
 
 def detect_buyable_coins():
+    from models.config import binanceParseMarket
     quote_currency = RUNING.get_quote()
-    print("quote currency", quote_currency)
     global execute_count
     print("Detecting buyable coins")
     if RUNING.get_current_market():
-        from models.config import binanceParseMarket
         app.market, app.base_currency, app.quote_currency = binanceParseMarket(RUNING.get_current_market())
         execute_count = 0
         print("Sending existing buy signal for", RUNING.get_current_market())
@@ -1061,6 +1084,8 @@ def detect_buyable_coins():
     dataframe_dict = {}
 
     for coin_pair in coin_pairs:
+        if RUNING.is_base_currently_running(coin_pair):
+            continue
         app.market = coin_pair
         try:
             trading_data = app.getHistoricalData(coin_pair, app.getGranularity())
@@ -1204,7 +1229,11 @@ def detect_buyable_coins():
                                        "sarima_3_dt": sarima_3_dt,
                                       }
     if dataframe_dict and len(dataframe_dict):
-        column_names = list(dataframe_dict.values())[0].keys()
+        filtered_df_dict = {}
+        for key, val in dataframe_dict.items():
+            if not RUNING.is_base_currently_running(val['coin_pair']):
+                filtered_df_dict[key] = val
+        dataframe_dict = filtered_df_dict
         dataframe = pd.DataFrame(dataframe_dict.values())
         buy_dataframe = dataframe
         if len(buy_dataframe.index) > 0:
@@ -1212,7 +1241,6 @@ def detect_buyable_coins():
             print("buy_dataframe.coin_pair", buy_dataframe['coin_pair'].values)
             buy_dataframe.to_csv('csvs/buy_dataframe_tracker.csv', mode='a', index=False, header=False)
             coin_pair = buy_dataframe['coin_pair'].values[0]
-            from models.config import binanceParseMarket
             app.market, app.base_currency, app.quote_currency = binanceParseMarket(coin_pair)
             execute_count = 0
             print("Sending buy signal for", coin_pair)
