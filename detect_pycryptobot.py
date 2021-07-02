@@ -405,8 +405,8 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
 
             # if greater than 2 hours, sell if margin greater than 0.05, greater than 5 hours, sell > -2%
             # or sell if margin less than -6
-            if ((datetime.now()-state.last_buy_time).seconds > 3600*1 and margin >= 0.2) or (
-                (datetime.now() - state.last_buy_time).seconds > 3600*5 and margin >= -2) or (
+            if (state.last_buy_time and (datetime.now()-state.last_buy_time).seconds > 3600*1 and margin >= 0.2) or (
+                state.last_buy_time and (datetime.now() - state.last_buy_time).seconds > 3600*5 and margin >= -2) or (
                 margin <= -10
             ) :
                 state.action = "SELL"
