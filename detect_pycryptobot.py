@@ -957,8 +957,11 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                                              current_price=price,
                                              last_buy_high=round(((state.last_buy_high / state.last_buy_price) - 1) * 100, 2),
                                              last_buy_low=round(((state.last_buy_low / state.last_buy_price) - 1) * 100, 2),
+                                             last_buy_low_price=state.last_buy_low,
                                              sarima_3_margin=sarima_3_margin,
                                              sarima_1_margin=sarima_1_margin,
+                                             granularity=app.getGranularity(),
+                                             time_held=divmod(divmod((datetime.now() - state.last_buy_time).seconds, 60)[0], 60)
                                              )
             else:
                 if execute_count >= 3:
@@ -994,6 +997,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
 
 def detect_buyable_coins():
     from models.config import binanceParseMarket
+    app.setGranularity(3600)
     quote_currency = RUNING.get_quote()
     global execute_count
     print("Detecting buyable coins")
