@@ -118,6 +118,7 @@ class AppState():
                 self.last_buy_size = float(last_order[last_order.action == 'buy']['size'])
                 self.last_buy_filled = float(last_order[last_order.action == 'buy']['filled'])
                 self.last_buy_price = float(last_order[last_order.action == 'buy']['price'])
+                self.last_buy_time = last_order[last_order.action == 'buy']['created_at'].dt.to_pydatetime()[0]
 
                 # binance orders do not show fees
                 if self.app.getExchange() == 'coinbasepro':
