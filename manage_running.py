@@ -44,9 +44,15 @@ class Running:
         obj['buy_price'] = kwargs['buy_price']
         obj['current_price'] = kwargs['current_price']
         obj['last_buy_high'] = kwargs['last_buy_high']
+        obj['last_buy_low_price'] = kwargs['last_buy_low_price']
         obj['last_buy_low'] = kwargs['last_buy_low']
         obj['sarima_3_margin'] = kwargs['sarima_3_margin']
         obj['sarima_1_margin'] = kwargs['sarima_1_margin']
+        time_held = kwargs['time_held']
+        try:
+            obj['time_held'] = f'{time_held[0]}h {time_held[1]}m'
+        except:
+            obj['time_held'] = None
         data = self.get_data()
         data["names"][self.name] = obj
         self.put_data(data)
