@@ -200,7 +200,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
     if app.getSmartSwitch() == 1 and app.getGranularity() == 3600 and app.is1hEMA1226Bull() is True and app.is6hEMA1226Bull() is True:
         Logger.info('*** smart switch from granularity 3600 (1 hour) to 900 (15 min) ***')
 
-        app.notifyTelegram(app.getMarket() + " smart switch from granularity 3600 (1 hour) to 900 (15 min)")
+        # app.notifyTelegram(app.getMarket() + " smart switch from granularity 3600 (1 hour) to 900 (15 min)")
 
         app.setGranularity(900)
         list(map(s.cancel, s.queue))
@@ -210,7 +210,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
     if app.getSmartSwitch() == 1 and app.getGranularity() == 900 and app.is1hEMA1226Bull() is False and app.is6hEMA1226Bull() is False:
         Logger.info("*** smart switch from granularity 900 (15 min) to 3600 (1 hour) ***")
 
-        app.notifyTelegram(app.getMarket() + " smart switch from granularity 900 (15 min) to 3600 (1 hour)")
+        # app.notifyTelegram(app.getMarket() + " smart switch from granularity 900 (15 min) to 3600 (1 hour)")
 
         app.setGranularity(3600)
         list(map(s.cancel, s.queue))
@@ -431,6 +431,8 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
             bullbeartext = ' (BEAR)'
 
         # polling is every 5 minutes (even for hourly intervals), but only process once per interval
+        if state.last_action != 'BUY':
+            print(immediate_action, state.last_df_index, current_df_index)
         if (immediate_action is True or state.last_df_index != current_df_index):
             precision = 4
 
@@ -964,7 +966,7 @@ def executeJob(sc=None, app: PyCryptoBot = None, state: AppState = None, trading
                                              time_held=divmod(divmod((datetime.now() - state.last_buy_time).seconds, 60)[0], 60)
                                              )
             else:
-                if execute_count >= 3:
+                if execute_count >= 10:
                     return
                 Logger.info(now + ' | ' + app.getMarket() + bullbeartext + ' | ' + app.printGranularity() + ' | Current Price: ' + str(price))
 
